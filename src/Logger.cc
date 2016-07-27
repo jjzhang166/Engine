@@ -36,14 +36,9 @@ Logger::~Logger() {
 }
 
 Logger & Logger::Instance() {
-	static mutex _iLock;
 	static unique_ptr<Logger> _iIns;
-
-	{
-		unique_lock<mutex> _(_iLock);
-		if (!_iIns.get()) _iIns.reset(new Logger);
-		return *(_iIns.get());
-	}	
+	if (!_iIns.get()) _iIns.reset(new Logger);
+	return *(_iIns.get());
 }
 
 void Logger::Init(const string & sName, const string & sPath, size_t nMaxSize, ELog::Level emMaxLevel, bool bStdOut) {
