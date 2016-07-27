@@ -141,6 +141,8 @@ LuaTable & LuaTable::operator=(const LuaTable & r) {
 		_pL = r._pL;
 		_nRef = luaL_ref(_pL, LUA_REGISTRYINDEX);
 	}
+
+	return *this;
 }
 
 void LuaTable::Push() {

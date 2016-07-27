@@ -110,7 +110,7 @@ public:
 	virtual ~SocketContext();
 
 	int		Connect(const string & sIP, int nPort);
-	bool	IsConnected() { _nSocket != INVALID_SOCKET; }
+	bool	IsConnected() { return _nSocket != INVALID_SOCKET; }
 	void	Close(ENet::Close emCode);
 	bool	Send(const char * pData, size_t nSize);
 	void	OnTick();
@@ -372,8 +372,8 @@ int ServerSocketContext::Listen(const string & sIP, int nPort) {
 	iAddr.sin_port			= htons(nPort);
 	iAddr.sin_addr.s_addr	= inet_addr(sIP.c_str());
 
-	if (bind(_nSocket, (sockaddr *) &iAddr, sizeof(sockaddr)) < 0) return SOCKET_ERR;
-	if (listen(_nSocket, 512) < 0) return SOCKET_ERR;
+	if (::bind(_nSocket, (sockaddr *) &iAddr, sizeof(sockaddr)) < 0) return SOCKET_ERR;
+	if (::listen(_nSocket, 512) < 0) return SOCKET_ERR;
 
 	try {
 		_pAcceptWorker = new thread(&ServerSocketContext::__AcceptThread, this);

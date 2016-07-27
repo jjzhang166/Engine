@@ -1,0 +1,118 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{7d28106b-14d5-4efa-bca5-35e6337789de}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{d4cca326-8763-4405-a2ed-95c44105d5eb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Miniz">
+      <UniqueIdentifier>{543d2dc5-06e1-4dce-8774-526a58fc5cf0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lib">
+      <UniqueIdentifier>{9e9cda65-4e1e-4a8f-a7e1-0794c66795b3}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\Application.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Command.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Compress.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\CsvFile.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\DateTime.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Guard.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\IniFile.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Logger.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Network.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Path.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Pool.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Runnable.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Script.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Singleton.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Utils.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Miniz\miniz.h">
+      <Filter>src\Miniz</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="include\Script.inl">
+      <Filter>include</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\Application.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Command.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Compress.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\CsvFile.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\DateTime.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\IniFile.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Logger.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Path.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Runnable.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Script.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Utils.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Miniz\miniz.cc">
+      <Filter>src\Miniz</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="lib\lua51.lib">
+      <Filter>lib</Filter>
+    </Library>
+  </ItemGroup>
+</Project>
