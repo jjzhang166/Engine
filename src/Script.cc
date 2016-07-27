@@ -5,7 +5,7 @@
 #include	<memory>
 
 std::function<void (const std::string &)> LuaPreference::HookError;
-LuaNil GNil;
+LuaNil GLuaNil;
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Implements of LuaMetatableProxy
@@ -130,6 +130,11 @@ int LuaState::Type(int nIdx) {
 ///////////////////////////////////////////////////////////////////////////////
 LuaTable::LuaTable(const LuaTable & r) : _pL(r._pL), _nRef(LUA_NOREF) {
 	lua_rawgeti(_pL, LUA_REGISTRYINDEX, r._nRef);
+	_nRef = luaL_ref(_pL, LUA_REGISTRYINDEX);
+}
+
+LuaTable::LuaTable(LuaState & r) : _pL(r._pL), _nRef(LUA_NOREF) {
+	lua_newtable(_pL);
 	_nRef = luaL_ref(_pL, LUA_REGISTRYINDEX);
 }
 
