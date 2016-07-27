@@ -263,3 +263,15 @@ std::vector<std::string> IniFile::GetSessions() {
 		vRet.push_back(it->first);
 	return std::move(vRet);
 }
+
+std::vector<std::string> IniFile::GetKeys(const std::string & sSession) {
+	std::vector<std::string> vRet;
+	
+	auto itS = _mContent.find(sSession);
+	if (itS == _mContent.end()) return std::move(vRet);
+
+	for (auto itK = itS->second.begin(); itK != itS->second.end(); ++itK)
+		vRet.push_back(itK->first);
+
+	return std::move(vRet);
+}

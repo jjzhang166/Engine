@@ -35,6 +35,11 @@ public:
 	std::vector<std::string> GetSessions();
 
 	/**
+	 * Get all keys in a session.
+	 **/
+	std::vector<std::string> GetKeys(const std::string & sSession);
+
+	/**
 	 * Get value of special configuration.
 	 *
 	 * \param	sSession	Session name of this configuration.
