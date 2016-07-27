@@ -64,8 +64,8 @@ template<> struct LuaGetter<int16_t> { static int16_t Do(lua_State * p, int n) {
 template<> struct LuaGetter<uint16_t> { static uint16_t Do(lua_State * p, int n) { return lua_tointeger(p, n) & 0xFFFF; } };
 template<> struct LuaGetter<int32_t> { static int32_t Do(lua_State * p, int n) { return lua_tointeger(p, n) & 0xFFFFFFFF; } };
 template<> struct LuaGetter<uint32_t> { static uint32_t Do(lua_State * p, int n) { return lua_tointeger(p, n) & 0xFFFFFFFF; } };
-template<> struct LuaGetter<int64_t> { static int64_t Do(lua_State * p, int n) { return (int64_t)lua_tonumber(p, n); } };
-template<> struct LuaGetter<uint64_t> { static uint64_t Do(lua_State * p, int n) { return (uint64_t)lua_tonumber(p, n); } };
+template<> struct LuaGetter<int64_t> { static int64_t Do(lua_State * p, int n) { return (int64_t)lua_tointeger(p, n); } };
+template<> struct LuaGetter<uint64_t> { static uint64_t Do(lua_State * p, int n) { return (uint64_t)lua_tointeger(p, n); } };
 template<> struct LuaGetter<float> { static float Do(lua_State * p, int n) { return (float)lua_tonumber(p, n); } };
 template<> struct LuaGetter<double> { static double Do(lua_State * p, int n) { return lua_tonumber(p, n); } };
 template<> struct LuaGetter<const char *> { static const char * Do(lua_State * p, int n) { return lua_tostring(p, n); } };
@@ -84,8 +84,8 @@ template<> struct LuaPusher<int16_t> { static void Do(lua_State * p, int16_t n) 
 template<> struct LuaPusher<uint16_t> { static void Do(lua_State * p, uint16_t n) { lua_pushinteger(p, (lua_Integer)n); } };
 template<> struct LuaPusher<int32_t> { static void Do(lua_State * p, int32_t n) { lua_pushinteger(p, (lua_Integer)n); } };
 template<> struct LuaPusher<uint32_t> { static void Do(lua_State * p, uint32_t n) { lua_pushinteger(p, (lua_Integer)n); } };
-template<> struct LuaPusher<int64_t> { static void Do(lua_State * p, int64_t n) { lua_pushnumber(p, (double)n); } };
-template<> struct LuaPusher<uint64_t> { static void Do(lua_State * p, uint64_t n) { lua_pushnumber(p, (double)n); } };
+template<> struct LuaPusher<int64_t> { static void Do(lua_State * p, int64_t n) { lua_pushinteger(p, (lua_Integer)n); } };
+template<> struct LuaPusher<uint64_t> { static void Do(lua_State * p, uint64_t n) { lua_pushinteger(p, (lua_Integer)n); } };
 template<> struct LuaPusher<float> { static void Do(lua_State * p, float n) { lua_pushnumber(p, (lua_Number)n); } };
 template<> struct LuaPusher<double> { static void Do(lua_State * p, double n) { lua_pushnumber(p, n); } };
 template<> struct LuaPusher<const char *> { static void Do(lua_State * p, const char * s) { lua_pushstring(p, s); } };
@@ -451,7 +451,7 @@ LuaState LuaTable::Call(const char * sFunc, Args && ... args) {
 
 		lua_remove(_pL, nTop + 1);
 		return LuaState(_pL, lua_gettop(_pL) - nTop);
-	} catch (std::runtime_error &) {
+	} catch (...) {
 		return LuaState(_pL, 0);
 	}	
 }
@@ -488,7 +488,7 @@ LuaState LuaTable::SelfCall(const char * sFunc, Args && ... args) {
 
 		lua_remove(_pL, nTop + 1);
 		return LuaState(_pL, lua_gettop(_pL) - nTop);
-	} catch (std::runtime_error &) {
+	} catch (...) {
 		return LuaState(_pL, 0);
 	}
 }
@@ -715,7 +715,7 @@ LuaState LuaScript::Call(const char * sTable, const char * sFunc, Args && ... ar
 
 	try {
 		return Get<LuaTable>(sTable).Call(sFunc, args...);
-	} catch (std::runtime_error &) {
+	} catch (...) {
 		lua_settop(_pL, nTop);
 		return LuaState(_pL, 0);
 	}
@@ -727,7 +727,7 @@ LuaState LuaScript::SelfCall(const char * sTable, const char * sFunc, Args && ..
 
 	try {
 		return Get<LuaTable>(sTable).SelfCall(sFunc, args...);
-	} catch (std::runtime_error &) {
+	} catch (...) {
 		lua_settop(_pL, nTop);
 		return LuaState(_pL, 0);
 	}

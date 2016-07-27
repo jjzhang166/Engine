@@ -27,6 +27,10 @@
     <ClInclude Include="include\Guard.h" />
     <ClInclude Include="include\IniFile.h" />
     <ClInclude Include="include\Logger.h" />
+    <ClInclude Include="include\Lua\lauxlib.h" />
+    <ClInclude Include="include\Lua\lua.h" />
+    <ClInclude Include="include\Lua\luaconf.h" />
+    <ClInclude Include="include\Lua\lualib.h" />
     <ClInclude Include="include\Network.h" />
     <ClInclude Include="include\Path.h" />
     <ClInclude Include="include\Pool.h" />
@@ -34,6 +38,27 @@
     <ClInclude Include="include\Script.h" />
     <ClInclude Include="include\Singleton.h" />
     <ClInclude Include="include\Utils.h" />
+    <ClInclude Include="src\Lua\lapi.h" />
+    <ClInclude Include="src\Lua\lcode.h" />
+    <ClInclude Include="src\Lua\lctype.h" />
+    <ClInclude Include="src\Lua\ldebug.h" />
+    <ClInclude Include="src\Lua\ldo.h" />
+    <ClInclude Include="src\Lua\lfunc.h" />
+    <ClInclude Include="src\Lua\lgc.h" />
+    <ClInclude Include="src\Lua\llex.h" />
+    <ClInclude Include="src\Lua\llimits.h" />
+    <ClInclude Include="src\Lua\lmem.h" />
+    <ClInclude Include="src\Lua\lobject.h" />
+    <ClInclude Include="src\Lua\lopcodes.h" />
+    <ClInclude Include="src\Lua\lparser.h" />
+    <ClInclude Include="src\Lua\lprefix.h" />
+    <ClInclude Include="src\Lua\lstate.h" />
+    <ClInclude Include="src\Lua\lstring.h" />
+    <ClInclude Include="src\Lua\ltable.h" />
+    <ClInclude Include="src\Lua\ltm.h" />
+    <ClInclude Include="src\Lua\lundump.h" />
+    <ClInclude Include="src\Lua\lvm.h" />
+    <ClInclude Include="src\Lua\lzio.h" />
     <ClInclude Include="src\Miniz\miniz.h" />
   </ItemGroup>
   <ItemGroup>
@@ -47,15 +72,45 @@
     <ClCompile Include="src\DateTime.cc" />
     <ClCompile Include="src\IniFile.cc" />
     <ClCompile Include="src\Logger.cc" />
+    <ClCompile Include="src\Lua\lapi.c" />
+    <ClCompile Include="src\Lua\lauxlib.c" />
+    <ClCompile Include="src\Lua\lbaselib.c" />
+    <ClCompile Include="src\Lua\lbitlib.c" />
+    <ClCompile Include="src\Lua\lcode.c" />
+    <ClCompile Include="src\Lua\lcorolib.c" />
+    <ClCompile Include="src\Lua\lctype.c" />
+    <ClCompile Include="src\Lua\ldblib.c" />
+    <ClCompile Include="src\Lua\ldebug.c" />
+    <ClCompile Include="src\Lua\ldo.c" />
+    <ClCompile Include="src\Lua\ldump.c" />
+    <ClCompile Include="src\Lua\lfunc.c" />
+    <ClCompile Include="src\Lua\lgc.c" />
+    <ClCompile Include="src\Lua\linit.c" />
+    <ClCompile Include="src\Lua\liolib.c" />
+    <ClCompile Include="src\Lua\llex.c" />
+    <ClCompile Include="src\Lua\lmathlib.c" />
+    <ClCompile Include="src\Lua\lmem.c" />
+    <ClCompile Include="src\Lua\loadlib.c" />
+    <ClCompile Include="src\Lua\lobject.c" />
+    <ClCompile Include="src\Lua\lopcodes.c" />
+    <ClCompile Include="src\Lua\loslib.c" />
+    <ClCompile Include="src\Lua\lparser.c" />
+    <ClCompile Include="src\Lua\lstate.c" />
+    <ClCompile Include="src\Lua\lstring.c" />
+    <ClCompile Include="src\Lua\lstrlib.c" />
+    <ClCompile Include="src\Lua\ltable.c" />
+    <ClCompile Include="src\Lua\ltablib.c" />
+    <ClCompile Include="src\Lua\ltm.c" />
+    <ClCompile Include="src\Lua\lundump.c" />
+    <ClCompile Include="src\Lua\lutf8lib.c" />
+    <ClCompile Include="src\Lua\lvm.c" />
+    <ClCompile Include="src\Lua\lzio.c" />
     <ClCompile Include="src\Miniz\miniz.cc" />
     <ClCompile Include="src\Network.cc" />
     <ClCompile Include="src\Path.cc" />
     <ClCompile Include="src\Runnable.cc" />
     <ClCompile Include="src\Script.cc" />
     <ClCompile Include="src\Utils.cc" />
-  </ItemGroup>
-  <ItemGroup>
-    <Library Include="lib\lua51.lib" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{9A04D990-09AD-4E00-AB4E-F6A98D751C64}</ProjectGuid>
@@ -126,7 +181,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DebugInformationFormat>OldStyle</DebugInformationFormat>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(SolutionDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)include;$(SolutionDir)include\Lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MinimalRebuild>false</MinimalRebuild>
     </ClCompile>
     <Link>
@@ -155,7 +210,8 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(SolutionDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)include;$(SolutionDir)include\Lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DebugInformationFormat>OldStyle</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

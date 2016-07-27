@@ -2,7 +2,7 @@
 #define		__ENGINE_SCRIPT_H_INCLUDED__
 
 extern "C" {
-#	include		"Lua/luajit.h"
+#	include		"Lua/lua.h"
 #	include		"Lua/lualib.h"
 #	include		"Lua/lauxlib.h"
 }

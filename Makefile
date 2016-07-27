@@ -3,15 +3,15 @@ CC			= gcc
 CXX			= g++
 CFLAGS		= -fPIC -O2 -pipe
 CXXFLAGS	= $(CFLAGS) -std=c++11 -pthread
-INCS		= -I./include
-LDFLAGS		= -Llib -lluajit -lpthread -luuid -lrt -ldl 
+INCS		= -I./include -I./include/Lua
+LDFLAGS		= -lpthread -luuid -lrt -ldl 
 
 LIBRARY		= libengine.so
-SRCDIR		= src src/Miniz
+SRCDIR		= src src/Miniz src/Lua
 
 ### Auto-Generate
-SRCS	= $(foreach path, $(SRCDIR), $(wildcard $(path)/*.cc))
-OBJS	= $(patsubst %.cc, %.o, $(SRCS))
+SRCS	= $(foreach path, $(SRCDIR), $(wildcard $(path)/*.cc) $(wildcard $(path)/*.c))
+OBJS	= $(patsubst %.c, %.o, $(patsubst %.cc, %.o, $(SRCS)))
 
 ### Targets
 library: prebuild build
@@ -30,3 +30,7 @@ clean:
 %.o: %.cc
 	@echo -e "\033[33m---> Compile $< ...\033[0m"
 	@$(CXX) $(CXXFLAGS) -c $< -o $@ $(INCS)
+
+%.o: %.c
+	@echo -e "\033[33m---> Compile $< ...\033[0m"
+	@$(CC) $(CFLAGS) -c $< -o $@ $(INCS)

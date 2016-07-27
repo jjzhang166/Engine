@@ -237,7 +237,7 @@ void LuaScript::DoFile(const char * sFile, bool bRequireOnce, bool bRestoreStack
 		}
 
 		lua_remove(_pL, nTop + 1);
-	} catch (std::runtime_error &) {}
+	} catch (...) {}
 
 	if (bRestoreStack) lua_settop(_pL, nTop);
 }
@@ -254,7 +254,7 @@ void LuaScript::Run(const char * sCode) {
 			lua_remove(_pL, nTop + 1);
 			lua_error(_pL);
 		}
-	} catch (std::runtime_error &) {}
+	} catch (...) {}
 
 	lua_settop(_pL, nTop);
 }
