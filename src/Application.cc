@@ -1,4 +1,5 @@
 #include	<Application.h>
+#include	<Path.h>
 #include	<csignal>
 #include	<thread>
 
@@ -38,6 +39,8 @@ void Application::Signal(int nSig, std::function<void (int)> fOpt) {
 
 void Application::Start(int nArgc, char * pArgv[]) {
 	{
+		if (nArgc > 0) Path::Change(Path::PurePath(pArgv[0]));
+
 		Command iCmd(nArgc, pArgv);
 		if (!OnInit(iCmd)) return;
 	}
