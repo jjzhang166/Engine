@@ -2,9 +2,9 @@
 CC			= gcc
 CXX			= g++
 CFLAGS		= -fPIC -O2 -pipe
-CXXFLAGS	= $(CFLAGS) -std=c++11 -pthread
+CXXFLAGS	= $(CFLAGS) -std=c++11
 INCS		= -I./include -I./include/Lua
-LDFLAGS		= -lpthread -luuid -lrt -ldl 
+LDFLAGS		= -lpthread -luuid -lrt -ldl
 
 LIBRARY		= libengine.so
 SRCDIR		= src src/Miniz src/Lua
