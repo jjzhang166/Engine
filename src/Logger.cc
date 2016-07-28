@@ -102,11 +102,11 @@ void Logger::Log(ELog::Level emLevel, const char * pFile, int nLine, const char 
 	if (emLevel == ELog::Debug) {
 		printf("%s\n", _pBuf);
 	} else if (emLevel == ELog::Warning) {
-		printf("\033[33m%s\n\033[0m", _pBuf);
+		printf("\033[33m%s\033[0m\n", _pBuf);
 	} else if (emLevel == ELog::Error) {
-		printf("\033[31m%s\n\033[0m", _pBuf);
+		printf("\033[31m%s\033[0m\n", _pBuf);
 	} else {
-		printf("\033[32m%s\n\033[0m", _pBuf);
+		printf("\033[32m%s\033[0m\n", _pBuf);
 	}
 #endif
 }

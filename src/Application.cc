@@ -6,6 +6,7 @@
 #if !defined(_WIN32)
 #	include		<sys/time.h>
 #	include		<sys/resource.h>
+#	include		<unistd.h>
 #endif
 
 struct AppSignalDispatcher {
@@ -38,22 +39,13 @@ void Application::Signal(int nSig, std::function<void (int)> fOpt) {
 }
 
 void Application::Start(int nArgc, char * pArgv[]) {
-	{
-		if (nArgc > 0) Path::Change(Path::PurePath(pArgv[0]));
+	if (nArgc > 0) Path::Change(Path::PurePath(pArgv[0]));
 
-		Command iCmd(nArgc, pArgv);
-		if (!OnInit(iCmd)) return;
-	}
-
-	auto iExiter = [this](int nSig) {
-		_nExit = nSig;
-		_bRun = false;
-	};
-
-	Signal(SIGINT, iExiter);
-	Signal(SIGTERM, iExiter);
+	Command iCmd(nArgc, pArgv);
 
 #if !defined(_WIN32)
+	if (iCmd.Has("--daemon")) daemon(0, 0);
+
 	signal(SIGPIPE, SIG_IGN);
 
 	struct rlimit iCore;
@@ -62,6 +54,16 @@ void Application::Start(int nArgc, char * pArgv[]) {
 	setrlimit(RLIMIT_CORE, &iCore);
 #endif
 
+	if (!OnInit(iCmd)) return;
+
+	auto iExiter = [this](int nSig) {
+		_nExit = nSig;
+		_bRun = false;
+	};
+
+	Signal(SIGINT, iExiter);
+	Signal(SIGTERM, iExiter);
+	
 	_bRun = true;
 	while (_bRun) {
 		OnTick();
