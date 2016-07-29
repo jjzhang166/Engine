@@ -81,10 +81,16 @@ public:
 	void	Unref();
 
 	template<typename T>
-	T	Get(int nIdx);
+	bool	Is(int nIdx);
 
 	template<typename T>
-	T	Get(const char * sKey);
+	bool	Is(const char * sName);
+
+	template<typename T>
+	T		Get(int nIdx);
+
+	template<typename T>
+	T		Get(const char * sKey);
 
 	template<typename T>
 	void	Set(int nIdx, typename LuaRefOf<T>::Type t);
@@ -150,6 +156,9 @@ public:
 	void		Run(const char * sCode);
 	LuaState	Stack();
 	void		GC();
+
+	template<typename T>
+	bool		Is(const char * sName);
 
 	template<typename T>
 	T			Get(const char * sName);

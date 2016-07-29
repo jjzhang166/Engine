@@ -10,7 +10,12 @@ bool CsvFile::Load(const std::string & sFile, int nHeader /* = 0 */, char nDelim
 
 	FILE * pFile = nullptr;
 	Guard iAuto([&](){ if (pFile) fclose(pFile); });
+
+#if defined(_WIN32)
+	if (fopen_s(&pFile, sFile.c_str(), "r") != 0) return false;
+#else
 	if ((pFile = fopen(sFile.c_str(), "r")) == NULL) return false;
+#endif
 
 	_vHeader.clear();
 	_vData.clear();

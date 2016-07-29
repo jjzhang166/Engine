@@ -373,6 +373,26 @@ void LuaState::Push(typename LuaRefOf<T>::Type t) {
 /// Implement of LuaTable
 ///////////////////////////////////////////////////////////////////////////////
 template<typename T>
+bool LuaTable::Is(int nIdx) {
+	lua_rawgeti(_pL, LUA_REGISTRYINDEX, _nRef);
+	lua_rawgeti(_pL, -1, nIdx);
+
+	bool bType = LuaTypeAssert<T>::Is(lua_type(_pL, -1));
+	lua_pop(_pL, 2);
+	return bType;
+}
+
+template<typename T>
+bool LuaTable::Is(const char * sName) {
+	lua_rawgeti(_pL, LUA_REGISTRYINDEX, _nRef);
+	lua_getfield(_pL, -1, sName);
+
+	bool bType = LuaTypeAssert<T>::Is(lua_type(_pL, -1));
+	lua_pop(_pL, 2);
+	return bType;
+}
+
+template<typename T>
 T LuaTable::Get(int nIdx) {
 	lua_rawgeti(_pL, LUA_REGISTRYINDEX, _nRef);
 	lua_rawgeti(_pL, -1, nIdx);
@@ -688,6 +708,15 @@ LuaRegisterClass<O> & LuaRegisterClass<O>::Method(const char * sMethod, int (O::
 ///////////////////////////////////////////////////////////////////////////////
 /// Implement of LuaScript
 ///////////////////////////////////////////////////////////////////////////////
+template<typename T>
+bool LuaScript::Is(const char * sName) {
+	lua_getglobal(_pL, sName);
+
+	bool bType = LuaTypeAssert<T>::Is(lua_type(_pL, -1));
+	lua_pop(_pL, 1);
+	return bType;
+}
+
 template<typename T>
 T LuaScript::Get(const char * sName) {
 	lua_getglobal(_pL, sName);

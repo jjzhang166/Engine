@@ -120,7 +120,12 @@ void Logger::__Create(DateTime * pCreate) {
 
 	if (!Path::Exists(_sPath) && !Path::Create(_sPath)) return;
 	if (!Path::Exists(sPath) && !Path::Create(sPath)) return;
-	if (!(_pFile = fopen(sFile.c_str(), "w"))) return;
+
+#if defined(_WIN32)
+	if (fopen_s(&_pFile, sFile.c_str(), "r") != 0) return;
+#else
+	if ((_pFile = fopen(sFile.c_str(), "r")) == NULL) return;
+#endif
 
 	_nWrited	= 0;
 	_nLastDay	= pCreate->nDay;

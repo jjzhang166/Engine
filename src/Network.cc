@@ -7,20 +7,13 @@
 #include	<thread>
 
 #if defined(_WIN32)
-#	define		MAX_SOCKET_CONN	4096
 #	if !defined(MSG_DONTWAIT)
 #		define		MSG_DONTWAIT	0
 #	endif
 #	define		SOCKET_ERR		WSAGetLastError()
+#	define		FD_SETSIZE		4096
 #	include		<WinSock2.h>
-
-/**
- * Because of win32 fd_set to small. We create a new struct for select()
- **/
-struct SocketSet {
-	u_int	fd_count;
-	SOCKET	fd_array[MAX_SOCKET_CONN];
-};
+#	include		<WS2tcpip.h>
 
 typedef int socklen_t;
 
@@ -157,7 +150,7 @@ private:
 
 #if defined(_WIN32)
 	SOCKET			_nSocket;
-	SocketSet		_tIO;
+	fd_set			_tIO;
 #else
 	int				_nSocket;
 	int				_tIO;
@@ -200,10 +193,11 @@ int SocketContext::Connect(const string & sIP, int nPort) {
 	struct sockaddr_in iAddr;
 	memset(&iAddr, 0, sizeof(iAddr));
 
-	iAddr.sin_family		= AF_INET;
-	iAddr.sin_port			= htons(nPort);
-	iAddr.sin_addr.s_addr	= inet_addr(sIP.c_str());
+	iAddr.sin_family	= AF_INET;
+	iAddr.sin_port		= htons(nPort);
 
+	if (0 >= inet_pton(AF_INET, sIP.c_str(), &iAddr.sin_addr)) return ENet::BadParam;
+	
 	if (connect(_nSocket, (struct sockaddr *)&iAddr, sizeof(struct sockaddr)) < 0) {
 		int nErr = SOCKET_ERR;
 	#if defined(_WIN32)
@@ -353,6 +347,8 @@ int ServerSocketContext::Listen(const string & sIP, int nPort) {
 
 	u_long nFlags = 1;
 	if (ioctlsocket(_nSocket, FIONBIO, &nFlags) != 0) return SOCKET_ERR;
+
+	FD_ZERO(&_tIO);
 #else
 	if ((_tIO = epoll_create(1)) == -1) {
 		close(_nSocket); _nSocket = INVALID_SOCKET;
@@ -370,7 +366,8 @@ int ServerSocketContext::Listen(const string & sIP, int nPort) {
 
 	iAddr.sin_family		= AF_INET;
 	iAddr.sin_port			= htons(nPort);
-	iAddr.sin_addr.s_addr	= inet_addr(sIP.c_str());
+
+	if (0 >= inet_pton(AF_INET, sIP.c_str(), &iAddr.sin_addr)) return ENet::BadParam;
 
 	if (::bind(_nSocket, (sockaddr *) &iAddr, sizeof(sockaddr)) < 0) return SOCKET_ERR;
 	if (::listen(_nSocket, 512) < 0) return SOCKET_ERR;
@@ -468,13 +465,7 @@ void ServerSocketContext::Close(uint64_t nConnId, ENet::Close emCode) {
 	_pOwner->OnClose(nConnId, emCode);
 
 #if defined(_WIN32)
-	for (u_int n = 0; n < _tIO.fd_count; ++n) {
-		if (it->second.nSocket == _tIO.fd_array[n]) {
-			_tIO.fd_count--;
-			_tIO.fd_array[n] = _tIO.fd_array[_tIO.fd_count];
-			break;
-		}
-	}
+	FD_CLR(it->second.nSocket, &_tIO);
 #else
 	epoll_ctl(_tIO, EPOLL_CTL_DEL, it->second.nSocket, NULL);
 #endif
@@ -489,7 +480,9 @@ void ServerSocketContext::Shutdown() {
 	for (auto it = _mConns.begin(); it != _mConns.end(); ++it) Close(it->first, ENet::Local);
 	_mConns.clear();
 
-#if !defined(_WIN32)
+#if defined(_WIN32)
+	FD_ZERO(&_tIO);
+#else
 	close(_tIO);
 #endif
 
@@ -550,14 +543,13 @@ void ServerSocketContext::__AcceptThread() {
 
 			ioctlsocket(nAccept, FIONBIO, &nFlags);
 
-			if (_tIO.fd_count >= MAX_SOCKET_CONN) {
+			if (_tIO.fd_count >= FD_SETSIZE) {
 				_pOwner->OnAccept(nConnId, ENet::TooMany);
 				closesocket(nAccept);
 				continue;
 			}
 
-			_tIO.fd_array[_tIO.fd_count] = nAccept;
-			_tIO.fd_count++;
+			FD_SET(nAccept, &_tIO);
 		#else
 			uint64_t nConnId = nAllocId++;
 			struct epoll_event iEvent = { 0 };
@@ -596,8 +588,8 @@ void ServerSocketContext::__IOThread() {
 
 	while (_nSocket != INVALID_SOCKET) {
 	#if defined(_WIN32)
-		SocketSet iRead = _tIO;
-		int nCount = select(0, (fd_set *)(&iRead), NULL, NULL, NULL);
+		fd_set iRead = _tIO;
+		int nCount = select(0, &iRead, NULL, NULL, NULL);
 
 		if (nCount <= 0) {
 			this_thread::yield();

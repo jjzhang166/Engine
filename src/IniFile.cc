@@ -169,7 +169,12 @@ bool IniFile::Load(const std::string & sFile) {
 	}
 
 	FILE * pFile = NULL;
-	if (!(pFile = fopen(sFile.c_str(), "r"))) {
+
+#if defined(_WIN32)
+	if (fopen_s(&pFile, sFile.c_str(), "r") != 0) {
+#else
+	if ((pFile = fopen(sFile.c_str(), "r")) == NULL) {
+#endif
 		_nLastError = State::FileAccess;
 		return false;
 	}
