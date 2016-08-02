@@ -1,4 +1,5 @@
 #include	<Application.h>
+#include	<Redis.h>
 #include	<Path.h>
 #include	<csignal>
 #include	<thread>
@@ -66,6 +67,7 @@ void Application::Start(int nArgc, char * pArgv[]) {
 	
 	_bRun = true;
 	while (_bRun) {
+		GRedis.Breath();
 		OnTick();
 		std::this_thread::yield();
 	}

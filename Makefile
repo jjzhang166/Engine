@@ -3,11 +3,11 @@ CC			= gcc
 CXX			= g++
 CFLAGS		= -fPIC -O2 -pipe
 CXXFLAGS	= $(CFLAGS) -std=c++11
-INCS		= -I./include -I./include/Lua
+INCS		= -I./include -I./include/lua
 LDFLAGS		= -lpthread -luuid -lrt -ldl
 
 LIBRARY		= libengine.so
-SRCDIR		= src src/Miniz src/Lua
+SRCDIR		= src src/miniz src/lua src/hiredis src/libev
 
 ### Auto-Generate
 SRCS	= $(foreach path, $(SRCDIR), $(wildcard $(path)/*.cc) $(wildcard $(path)/*.c))

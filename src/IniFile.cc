@@ -184,7 +184,7 @@ bool IniFile::Load(const std::string & sFile) {
 	std::string sLine, sSession, sAttribute, sValue;
 
 	uint8_t pBomb[3] = { 0, 0, 0 };
-	int nCount = fread(pBomb, 1, 3, pFile);
+	size_t nCount = fread(pBomb, 1, 3, pFile);
 	if (nCount < 3 || !(pBomb[0] == 0xEF && pBomb[1] == 0xBB && pBomb[2] == 0xBF)) fseek(pFile, 0, SEEK_SET);
 
 	while (!feof(pFile)) {

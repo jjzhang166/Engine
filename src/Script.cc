@@ -1,10 +1,10 @@
 #include	<Script.h>
 #include	<Path.h>
+#include	<Logger.h>
 
 #include	<algorithm>
 #include	<memory>
 
-std::function<void (const std::string &)> LuaPreference::HookError;
 LuaNil GLuaNil;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -187,11 +187,10 @@ LuaRegister & LuaRegister::Method(const char * sMethod, int (*fOpt)(LuaState &))
 LuaScript::LuaScript() : _pL(luaL_newstate()) {
 	lua_atpanic(_pL, [](lua_State * pL) -> int {
 		if (lua_gettop(pL) > 0) {
-			std::string sErr = lua_tostring(pL, -1);
-			if (LuaPreference::HookError) LuaPreference::HookError(sErr);
+			Logger::Instance().Log(ELog::Error, "@SCRIPT", -1, lua_tostring(pL, -1));
 			lua_pop(pL, 1);
 		} else {
-			if (LuaPreference::HookError) LuaPreference::HookError("Unknown");
+			Logger::Instance().Log(ELog::Error, "@SCRIPT", -1, "Unknown error!");
 		}
 
 		lua_gc(pL, LUA_GCCOLLECT, 0);

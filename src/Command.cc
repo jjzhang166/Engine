@@ -7,8 +7,8 @@ void Command::Parse(int nArgc, char * pArgv[]) {
 	for (int nIdx = 0; nIdx < nArgc; ++nIdx) {
 		if (pArgv[nIdx] && pArgv[nIdx][0]) {
 			std::string sParam(pArgv[nIdx]);
-			int nPos = sParam.find_first_of("=");
-			int nLen = sParam.length();
+			size_t nPos = sParam.find_first_of("=");
+			size_t nLen = sParam.length();
 			if (nPos == std::string::npos)
 				_mCmd[sParam] = "";
 			else if (nPos == 0)
@@ -27,8 +27,8 @@ void Command::Parse(const std::string & sCmd) {
 	std::vector<std::string> vParams = Split(sCmd, " \t");
 	for (size_t i = 0; i < vParams.size(); ++i) {
 		std::string sParam(vParams[i]);
-		int nPos = sParam.find_first_of("=");
-		int nLen = sParam.length();
+		size_t nPos = sParam.find_first_of("=");
+		size_t nLen = sParam.length();
 		if (nPos == std::string::npos)
 			_mCmd[sParam] = "";
 		else if (nPos == 0)

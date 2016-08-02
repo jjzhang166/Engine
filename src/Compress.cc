@@ -1,6 +1,6 @@
 #include	<Compress.h>
 #include	<cstring>
-#include	"Miniz/miniz.h"
+#include	"miniz/miniz.h"
 
 Zip::Zip() : _pZip(new mz_zip_archive), _bValid(false), _vItems() {
 }
@@ -11,7 +11,7 @@ Zip::~Zip() {
 }
 
 size_t Zip::CalcCompressed(size_t nSize) {
-	return (size_t)mz_compressBound(nSize);
+	return (size_t)mz_compressBound((mz_ulong)nSize);
 }
 
 int Zip::Compress(char * pDst, size_t & nOutSize, const char * pSrc, size_t nSrcSize) {
@@ -36,10 +36,10 @@ bool Zip::LoadFile(const char * pFile) {
 	size_t nCount = mz_zip_reader_get_num_files(_pZip);
 	for (size_t nIdx = 0; nIdx < nCount; ++nIdx) {
 		mz_zip_archive_file_stat iStat;
-		if (!mz_zip_reader_file_stat(_pZip, nIdx, &iStat)) continue;
+		if (!mz_zip_reader_file_stat(_pZip, (mz_uint)nIdx, &iStat)) continue;
 		Item iInfo;
 		::memcpy(iInfo.sName, iStat.m_filename, 256);
-		iInfo.bDir = mz_zip_reader_is_file_a_directory(_pZip, nIdx) == 1;
+		iInfo.bDir = mz_zip_reader_is_file_a_directory(_pZip, (mz_uint)nIdx) == 1;
 		iInfo.nSize = (size_t)iStat.m_uncomp_size;
 		_vItems.push_back(iInfo);
 	}
@@ -56,10 +56,10 @@ bool Zip::LoadMemory(const char * pData, size_t nSize) {
 	size_t nCount = mz_zip_reader_get_num_files(_pZip);
 	for (size_t nIdx = 0; nIdx < nCount; ++nIdx) {
 		mz_zip_archive_file_stat iStat;
-		if (!mz_zip_reader_file_stat(_pZip, nIdx, &iStat)) continue;
+		if (!mz_zip_reader_file_stat(_pZip, (mz_uint)nIdx, &iStat)) continue;
 		Item iInfo;
 		::memcpy(iInfo.sName, iStat.m_filename, 256);
-		iInfo.bDir = mz_zip_reader_is_file_a_directory(_pZip, nIdx) == 1;
+		iInfo.bDir = mz_zip_reader_is_file_a_directory(_pZip, (mz_uint)nIdx) == 1;
 		iInfo.nSize = (size_t)iStat.m_uncomp_size;
 		_vItems.push_back(iInfo);
 	}

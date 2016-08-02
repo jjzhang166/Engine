@@ -21,7 +21,7 @@ bool CsvFile::Load(const std::string & sFile, int nHeader /* = 0 */, char nDelim
 	_vData.clear();
 
 	unsigned char pBomb[3] = { 0, 0, 0 };
-	int nCount = fread(pBomb, 1, 3, pFile);
+	size_t nCount = fread(pBomb, 1, 3, pFile);
 	if (nCount < 3 || !(pBomb[0] == 0xEF && pBomb[1] == 0xBB && pBomb[2] == 0xBF))
 		fseek(pFile, 0, SEEK_SET);
 

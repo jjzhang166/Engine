@@ -20,7 +20,7 @@ public:
 	/**
 	 * Get number of valid records in this file.
 	 **/
-	int Count() { return _vData.size(); }
+	size_t Count() { return _vData.size(); }
 
 	/**
 	 * Get all headers

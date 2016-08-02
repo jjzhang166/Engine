@@ -71,7 +71,7 @@ public:
 	 * Process all received data at once. This may invoke OnReceive() many times.
 	 * You should call this in your main event loop.
 	 **/
-	void OnTick();
+	void Breath();
 
 	/**
 	 * Action to do after connected to server.
@@ -161,7 +161,7 @@ public:
 	 * Process all received data at once. This may invoke OnReceive() many times.
 	 * You should call this in your main event loop.
 	 **/
-	void OnTick();
+	void Breath();
 
 	/**
 	 * Invoked after a client try to connect to this server.

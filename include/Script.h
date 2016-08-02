@@ -2,12 +2,11 @@
 #define		__ENGINE_SCRIPT_H_INCLUDED__
 
 extern "C" {
-#	include		"Lua/lua.h"
-#	include		"Lua/lualib.h"
-#	include		"Lua/lauxlib.h"
+#	include		"lua/lua.h"
+#	include		"lua/lualib.h"
+#	include		"lua/lauxlib.h"
 }
 
-#include	<functional>
 #include	<cstdint>
 #include	<cstring>
 #include	<string>
@@ -23,13 +22,6 @@ template<typename T> struct LuaRefOf { typedef T Type; };
 template<> struct LuaRefOf<std::string> { typedef const std::string & Type; };
 template<> struct LuaRefOf<class LuaNil> { typedef LuaNil & Type; };
 template<> struct LuaRefOf<class LuaTable> { typedef LuaTable & Type; };
-
-/**
- * Global preference setting of LUA.
- **/
-struct LuaPreference {
-	static std::function<void (const std::string &)> HookError;
-};
 
 /**
  * LUA nil type in C++

@@ -122,9 +122,9 @@ void Logger::__Create(DateTime * pCreate) {
 	if (!Path::Exists(sPath) && !Path::Create(sPath)) return;
 
 #if defined(_WIN32)
-	if (fopen_s(&_pFile, sFile.c_str(), "r") != 0) return;
+	if (fopen_s(&_pFile, sFile.c_str(), "w") != 0) return;
 #else
-	if ((_pFile = fopen(sFile.c_str(), "r")) == NULL) return;
+	if ((_pFile = fopen(sFile.c_str(), "w")) == NULL) return;
 #endif
 
 	_nWrited	= 0;

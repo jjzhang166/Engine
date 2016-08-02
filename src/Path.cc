@@ -62,7 +62,7 @@ string Path::FullPath(const string & sPath) {
 
 string Path::PurePath(const string & sPath) {
 	if (sPath.empty() || sPath.length() <= 0) return "";
-	for (int nIdx = sPath.length() - 1; nIdx >= 0; --nIdx) {
+	for (size_t nIdx = sPath.length() - 1; nIdx >= 0; --nIdx) {
 		if (sPath[nIdx] == '/' || sPath[nIdx] == '\\') {
 			if (nIdx != 0) return sPath.substr(0, nIdx);
 		}
@@ -72,7 +72,7 @@ string Path::PurePath(const string & sPath) {
 
 string Path::PureFile(const string & sPath) {
 	if (sPath.empty() || sPath.length() <= 0) return "";
-	for (int nIdx = sPath.length() - 1; nIdx >= 0; --nIdx) {
+	for (size_t nIdx = sPath.length() - 1; nIdx >= 0; --nIdx) {
 		if (sPath[nIdx] == '/' || sPath[nIdx] == '\\') {
 			return sPath.substr(nIdx + 1);
 		}

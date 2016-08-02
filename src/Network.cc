@@ -106,7 +106,7 @@ public:
 	bool	IsConnected() { return _nSocket != INVALID_SOCKET; }
 	void	Close(ENet::Close emCode);
 	bool	Send(const char * pData, size_t nSize);
-	void	OnTick();
+	void	Breath();
 
 private:
 	void	__IOThread();
@@ -133,7 +133,7 @@ public:
 	void	Broadcast(const char * pData, size_t nSize);
 	void	Close(uint64_t nConnId, ENet::Close emCode);
 	void	Shutdown();
-	void	OnTick();
+	void	Breath();
 
 	IServerSocket::RemoteInfo	GetClientInfo(uint64_t nConnId);
 
@@ -253,7 +253,7 @@ bool SocketContext::Send(const char * pData, size_t nSize) {
 	size_t	nLeft = nSize;
 
 	while (true) {
-		nSend = send(_nSocket, pSend, nLeft, MSG_DONTWAIT);
+		nSend = send(_nSocket, pSend, (int)nLeft, MSG_DONTWAIT);
 		if (nSend < 0) {
 			int nErr = SOCKET_ERR;
 		#if defined(_WIN32)
@@ -276,7 +276,7 @@ bool SocketContext::Send(const char * pData, size_t nSize) {
 	return nLeft == 0;
 }
 
-void SocketContext::OnTick() {
+void SocketContext::Breath() {
 	if (_nSocket == INVALID_SOCKET) return;
 
 	size_t nSize = 0;
@@ -405,7 +405,7 @@ bool ServerSocketContext::Send(uint64_t nConnId, const char * pData, size_t nSiz
 	size_t	nLeft	= nSize;
 
 	while (true) {
-		nSend = send(nSocket, pSend, nLeft, MSG_DONTWAIT);
+		nSend = send(nSocket, pSend, (int)nLeft, MSG_DONTWAIT);
 		if (nSend < 0) {
 			int nErr = SOCKET_ERR;
 		#if defined(_WIN32)
@@ -436,7 +436,7 @@ void ServerSocketContext::Broadcast(const char * pData, size_t nSize) {
 		size_t	nLeft	= nSize;
 
 		while (true) {
-			nSend = send(nSocket, pSend, nLeft, MSG_DONTWAIT);
+			nSend = send(nSocket, pSend, (int)nLeft, MSG_DONTWAIT);
 			if (nSend < 0) {
 				int nErr = SOCKET_ERR;
 			#if defined(_WIN32)
@@ -495,7 +495,7 @@ void ServerSocketContext::Shutdown() {
 	delete _pIOWorker;
 }
 
-void ServerSocketContext::OnTick() {
+void ServerSocketContext::Breath() {
 	if (_nSocket == INVALID_SOCKET) return;
 
 	size_t nOffset = 0;
@@ -696,8 +696,8 @@ bool ISocket::Send(const char * pData, size_t nSize) {
 	return _pCtx->Send(pData, nSize);
 }
 
-void ISocket::OnTick() {
-	_pCtx->OnTick();
+void ISocket::Breath() {
+	_pCtx->Breath();
 }
 
 IServerSocket::IServerSocket() : _pCtx(nullptr) {
@@ -736,6 +736,10 @@ IServerSocket::RemoteInfo IServerSocket::GetClientInfo(uint64_t nConnId) {
 	return _pCtx->GetClientInfo(nConnId);
 }
 
-void IServerSocket::OnTick() {
-	_pCtx->OnTick();
+void IServerSocket::Breath() {
+	_pCtx->Breath();
 }
+
+#if defined(_WIN32)
+#undef FD_SETSIZE
+#endif
