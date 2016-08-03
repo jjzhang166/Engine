@@ -14,12 +14,11 @@ C++服务器编程底层库
 
 > 注：Linux下建议使用GCC的`-Wl,-rpath,XXX`连接选项指定运行期动态连接库的优先查找目录，以方便分发部署
 
-## 说明
-1. Network模型：Windows使用select，Linux下使用epoll.
-2. Zip使用[miniz](https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/miniz/miniz_v115_r4.7z) v1.15 r4.
-3. [Lua](http://www.lua.org/ftp/lua-5.3.3.tar.gz) v5.3.3.
-4. Hiredis基于官方[hiredis](https://github.com/redis/hiredis) v0.13.3修改使之支持Windows平台。Redis类为Hiredis + libev.
-5. [Libev](http://dist.schmorp.de/libev/libev-4.22.tar.gz) v4.22.
+## 集成第三方说明
+1. Zip使用[miniz](https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/miniz/miniz_v115_r4.7z) v1.15 r4.
+2. [Lua](http://www.lua.org/ftp/lua-5.3.3.tar.gz) v5.3.3.
+3. Hiredis基于官方[hiredis](https://github.com/redis/hiredis) v0.13.3修改使之支持Windows平台。Redis类为Hiredis + libev.
+4. [Libev](http://dist.schmorp.de/libev/libev-4.22.tar.gz) v4.22.
 
 ## 模块
 
@@ -56,6 +55,7 @@ RUN_APP(GameApp)
 > 1. 头文件 : Network.h
 2. 客户端继承ISocket，服务器继承IServerSocket
 3. 实际的消息接收都在一个独立的线程中进行，但需要在主线程中调用Breath()来触发一次累计接收信息的处理
+4. Windows平台目的是开发期调试，采用了Select模型；Linux下则采用了epoll模型
 
 以客户端为例：
 
@@ -196,6 +196,28 @@ int main() {
 	iMgr.WaitAll();
 	return 0;
 }
+```
+
+### 日志
+
+1. 多线程安全
+2. 日志使用之前可以初始化（不是必要的，但建议初始化—）
+3. 日志生成的结构说明
+
+	RootOfLogs						指定的日志根目录
+	|-- 20160803					首先日志会根据“年月日”分文件夹
+	|	|-- main_01_00_00.000.log	其次日志会按指定大小分文件记录，文件名为指定的"Name_时_分_秒.毫秒.log"
+	|	|-- main_01_27_18.193.log
+
+```cpp
+/// 初始化日志。日志名为main, 放在logs目录下，每个文件最大为4M，输出等级为DEBUG，写文件的同时输出到终端
+Logger::Instance().Init("main", "logs", 4 * 1024 * 1024, ELog::Debug, true);
+
+/// 写日志
+LOG_INFO("Hello");
+LOG_DEBUG("Hello %d", 2);
+LOG_ERR("Error : %s", "Test");
+LOG_WARN("You have a warning");
 ```
 
 ### Redis
