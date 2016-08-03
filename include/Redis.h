@@ -41,10 +41,10 @@ public:
 	bool	Command(CBStr fOpt, const char * pFmt, ...);
 	bool	Command(CBArr fOpt, const char * pFmt, ...);
 
-	bool	Get(const std::string & sKey, CBStr fOpt) { return Command(fOpt, "GET %s", sKey.c_str()); }
-	bool	Set(const std::string & sKey, const std::string & sData) { Set(sKey, sData.data(), sData.size()); }
-	bool	Set(const std::string & sKey, const char * pBuf, size_t nSize) { return Command("SET %s %b", sKey.c_str(), pBuf, nSize); }
-	bool	Del(const std::string & sKey) { return Command("DEL %s", sKey.c_str()); }
+	bool	Get(const std::string & sKey, CBStr fOpt) { return this->Command(fOpt, "GET %s", sKey.c_str()); }
+	bool	Set(const std::string & sKey, const std::string & sData) { return this->Set(sKey, sData.data(), sData.size()); }
+	bool	Set(const std::string & sKey, const char * pBuf, size_t nSize) { return this->Command("SET %s %b", sKey.c_str(), pBuf, nSize); }
+	bool	Del(const std::string & sKey) { return this->Command("DEL %s", sKey.c_str()); }
 
 private:
 	void	__Reconnect();
