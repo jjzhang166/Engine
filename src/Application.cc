@@ -67,8 +67,8 @@ void Application::Start(int nArgc, char * pArgv[]) {
 	
 	_bRun = true;
 	while (_bRun) {
-		GRedis.Breath();
 		OnTick();
+		GRedis.Breath();
 		std::this_thread::yield();
 	}
 
