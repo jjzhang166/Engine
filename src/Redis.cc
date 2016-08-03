@@ -87,90 +87,172 @@ void Redis::Breath() {
 	ev_run(_pLoop, EVRUN_NOWAIT);
 }
 
-bool Redis::Get(const std::string & sKey, std::function<void(const char *, size_t)> fOpt) {
+bool Redis::Command(const char * pFmt, ...) {
 	if (!_bConnected) {
-		LOG_ERR("Try to GET data on a redis NOT connected!");
+		LOG_ERR("Try to run command on a redis NOT connected!");
 		return false;
 	}
 
-	uint64_t nId = _nAllocId++;
-	if (fOpt) _mGetter.insert(std::pair<uint64_t, std::function<void(const char *, size_t)>>(nId, fOpt));
+	va_list args;
+	va_start(args, pFmt);
 
-	int nState = redisAsyncCommand(_pCtx, [](redisAsyncContext * pCtx, void * pData, void * pUser) {
+	int nState = redisvAsyncCommand(_pCtx, [](redisAsyncContext * pCtx, void * pData, void * pUser) {
+		redisReply * pReply = (redisReply *)pData;
+
+		if (!pReply) {
+			LOG_ERR("Redis run command error with NO reply!!!");
+		} else if (pReply->type == REDIS_REPLY_ERROR) {
+			LOG_ERR("Redis run command error : %s", pReply->str);
+		} else if (pReply->type != REDIS_REPLY_STATUS) {
+			LOG_ERR("Redis run command error with wrong status : %d != REDIS_REPLY_STATUS(%d)", pReply->type, REDIS_REPLY_STATUS);
+		}
+	}, NULL, pFmt, args);
+
+	va_end(args);
+
+	if (nState) {
+		LOG_ERR("Redis run command error with code : %d", nState);
+		return false;
+	}
+
+	return true;
+}
+
+bool Redis::Command(Redis::CBInt fOpt, const char * pFmt, ...) {
+	if (!_bConnected) {
+		LOG_ERR("Try to run command on a redis NOT connected!");
+		return false;
+	}
+
+	va_list args;
+	va_start(args, pFmt);
+
+	uint64_t nId = _nAllocId++;
+	if (fOpt) _mCBInt.insert(std::pair<uint64_t, CBInt>(nId, fOpt));
+
+	int nState = redisvAsyncCommand(_pCtx, [](redisAsyncContext * pCtx, void * pData, void * pUser) {
 		Redis * p = static_cast<Redis *>(pCtx->data);
 		redisReply * pReply = (redisReply *)pData;
 		uint64_t n = (uint64_t)(pUser);
-		auto it = p->_mGetter.find(n);
+		auto it = p->_mCBInt.find(n);
 
 		if (!pReply) {
-			LOG_ERR("Redis GET error with NO reply!!!");
+			LOG_ERR("Redis run command error with NO reply!!!");
 		} else if (pReply->type == REDIS_REPLY_ERROR) {
-			LOG_ERR("Redis GET error : %s", pReply->str);
+			LOG_ERR("Redis run command error : %s", pReply->str);
 		} else if (pReply->type == REDIS_REPLY_NIL) {
-			if (it != p->_mGetter.end()) it->second(NULL, 0);
-		} else if (pReply->type != REDIS_REPLY_STRING) {
-			LOG_ERR("Redis GET error, string expacted but got : %d", pReply->type);
+			if (it != p->_mCBInt.end()) it->second(0, false);
+		} else if (pReply->type != REDIS_REPLY_INTEGER) {
+			LOG_ERR("Redis run command error, integer expacted but got : %d", pReply->type);
 		} else {
-			if (it != p->_mGetter.end()) it->second(pReply->str, pReply->len);
+			if (it != p->_mCBInt.end()) it->second(pReply->integer, true);
 		}
 
-		p->_mGetter.erase(n);
-	}, (void *)(uintptr_t)nId, "GET %s", sKey.c_str());
+		p->_mCBInt.erase(n);
+	}, (void *)(uintptr_t)nId, pFmt, args);
+
+	va_end(args);
 
 	if (nState) {
-		LOG_ERR("Redis GET error with code : %d", nState);
+		LOG_ERR("Redis run command error with code : %d", nState);
 		return false;
 	}
 
 	return true;
 }
 
-bool Redis::Set(const std::string & sKey, const char * pBuf, size_t nSize) {
+bool Redis::Command(Redis::CBStr fOpt, const char * pFmt, ...) {
 	if (!_bConnected) {
-		LOG_ERR("Try to SET data on a redis NOT connected!");
+		LOG_ERR("Try to run command on a redis NOT connected!");
 		return false;
 	}
 
-	int nState = redisAsyncCommand(_pCtx, [](redisAsyncContext * pCtx, void * pData, void * pUser) {
+	va_list args;
+	va_start(args, pFmt);
+
+	uint64_t nId = _nAllocId++;
+	if (fOpt) _mCBStr.insert(std::pair<uint64_t, CBStr>(nId, fOpt));
+
+	int nState = redisvAsyncCommand(_pCtx, [](redisAsyncContext * pCtx, void * pData, void * pUser) {
+		Redis * p = static_cast<Redis *>(pCtx->data);
 		redisReply * pReply = (redisReply *)pData;
+		uint64_t n = (uint64_t)(pUser);
+		auto it = p->_mCBStr.find(n);
 
 		if (!pReply) {
-			LOG_ERR("Redis SET error with NO reply!!!");
+			LOG_ERR("Redis run command error with NO reply!!!");
 		} else if (pReply->type == REDIS_REPLY_ERROR) {
-			LOG_ERR("Redis SET error : %s", pReply->str);
-		} else if (pReply->type != REDIS_REPLY_STATUS) {
-			LOG_ERR("Redis SET error with wrong status : %d != REDIS_REPLY_STATUS(%d)", pReply->type, REDIS_REPLY_STATUS);
+			LOG_ERR("Redis run command error : %s", pReply->str);
+		} else if (pReply->type == REDIS_REPLY_NIL) {
+			if (it != p->_mCBStr.end()) it->second(nullptr, 0);
+		} else if (pReply->type != REDIS_REPLY_STRING) {
+			LOG_ERR("Redis run command error, string expacted but got : %d", pReply->type);
+		} else {
+			if (it != p->_mCBStr.end()) it->second(pReply->str, pReply->len);
 		}
-	}, NULL, "SET %s %b", sKey.c_str(), pBuf, nSize);
+
+		p->_mCBStr.erase(n);
+	}, (void *)(uintptr_t)nId, pFmt, args);
+
+	va_end(args);
 
 	if (nState) {
-		LOG_ERR("Redis SET error with code : %d", nState);
+		LOG_ERR("Redis run command error with code : %d", nState);
 		return false;
 	}
 
 	return true;
 }
 
-bool Redis::Del(const std::string & sKey) {
+bool Redis::Command(Redis::CBArr fOpt, const char * pFmt, ...) {
 	if (!_bConnected) {
-		LOG_ERR("Try to DEL data on a redis NOT connected!");
+		LOG_ERR("Try to run command on a redis NOT connected!");
 		return false;
 	}
 
-	int nState = redisAsyncCommand(_pCtx, [](redisAsyncContext * pCtx, void * pData, void * pUser) {
+	va_list args;
+	va_start(args, pFmt);
+
+	uint64_t nId = _nAllocId++;
+	if (fOpt) _mCBArr.insert(std::pair<uint64_t, CBArr>(nId, fOpt));
+
+	int nState = redisvAsyncCommand(_pCtx, [](redisAsyncContext * pCtx, void * pData, void * pUser) {
+		Redis * p = static_cast<Redis *>(pCtx->data);
 		redisReply * pReply = (redisReply *)pData;
+		uint64_t n = (uint64_t)(pUser);
+		auto it = p->_mCBArr.find(n);
+		std::vector<std::string> vRet;
 
 		if (!pReply) {
-			LOG_ERR("Redis DEL error with NO reply!!!");
+			LOG_ERR("Redis run command error with NO reply!!!");
 		} else if (pReply->type == REDIS_REPLY_ERROR) {
-			LOG_ERR("Redis DEL error : %s", pReply->str);
-		} else if (pReply->type != REDIS_REPLY_STATUS) {
-			LOG_ERR("Redis DEL error with wrong status : %d != REDIS_REPLY_STATUS(%d)", pReply->type, REDIS_REPLY_STATUS);
+			LOG_ERR("Redis run command error : %s", pReply->str);
+		} else if (pReply->type == REDIS_REPLY_NIL) {
+			if (it != p->_mCBArr.end()) it->second(vRet);
+		} else if (pReply->type != REDIS_REPLY_ARRAY) {
+			LOG_ERR("Redis run command error, array expacted but got : %d", pReply->type);
+		} else {
+			for (size_t i = 0; i < pReply->elements; ++i) {
+				redisReply * pChild = pReply->element[i];
+				if (pChild->type == REDIS_REPLY_NIL) {
+					vRet.push_back("");
+				} else if (pChild->type != REDIS_REPLY_STRING) {
+					LOG_ERR("Redis run command error, element must be string value but got : %d", pChild->type);
+				} else {
+					vRet.push_back(std::string(pChild->str, pChild->len));
+				}
+			}
+
+			if (it != p->_mCBArr.end()) it->second(vRet);
 		}
-	}, NULL, "DEL %s", sKey.c_str());
+
+		p->_mCBArr.erase(n);
+	}, (void *)(uintptr_t)nId, pFmt, args);
+
+	va_end(args);
 
 	if (nState) {
-		LOG_ERR("Redis DEL error with code : %d", nState);
+		LOG_ERR("Redis run command error with code : %d", nState);
 		return false;
 	}
 
