@@ -128,7 +128,7 @@ struct LuaMultPusher {
 struct LuaMetatableProxy {
 	static int	Readonly(lua_State * pL);
 	static int	Include(lua_State * pL);
-	static int	Class(lua_State * pL);
+	static int	Extends(lua_State * pL);
 	static int	Index(lua_State * pL);
 	static int	NewIndex(lua_State * pL);
 	static int	Func(lua_State * pL);

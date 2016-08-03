@@ -53,15 +53,17 @@ RUN_APP(GameApp)
 
 ### 网络模型
 
-> 头文件 : Network.h
-客户端继承ISocket，服务器继承IServerSocket
-需要在主线程中调用Breath()来触发一次累计接收信息的处理
+> 1. 头文件 : Network.h
+2. 客户端继承ISocket，服务器继承IServerSocket
+3. 实际的消息接收都在一个独立的线程中进行，但需要在主线程中调用Breath()来触发一次累计接收信息的处理
 
 以客户端为例：
-```cpp
 
+```cpp
 #include	<Network.h>
 #include	<Singleton.h>
+
+#define		GServer	ServerConnect::Instance()
 
 class ServerConnect : public ISocket, public ISingleton<ServerConnect> {
 public:
@@ -74,14 +76,14 @@ public:
 bool GameApp::OnInit(Command & rCmd) {
 	...
 
-	ServerConnect::Instance().Connect(...);
+	GServer.Connect(...);
 
 	...
 }
 
 /// 在主线程Tick中调用
 void GameApp::OnTick() {
-	ServerConnect::Instance().Breath();
+	GServer.Breath();	//! 触发一次累计已接收消息的处理。自动回调OnReceive
 }
 
 ```
@@ -92,6 +94,8 @@ void GameApp::OnTick() {
 2. 涉及到Get操作，需要try...catch以捕获类型异常（C++注册到Lua的接口内Get不需要，调用函数不需要）
 3. Property可以为地址方式，也可以为Getter(T (void))、Setter(void (reference type T))方式注册
 4. Method必须为`int (*f)(LuaState &)`
+5. Lua中如果需要控制加载顺序，请使用`include`，加载第三方Module时，请使用`require`
+6. Lua不可用于多线程，只能在主线程中使用，但可以使用协程。
 
 ```cpp
 #include	<Script.h>
@@ -121,3 +125,105 @@ int GetAById(LuaState & r) {
 	...
 }
 ```
+
+LUA中扩展C++注册的类或名空间（注只能扩展方法，不可扩展属性）
+```lua
+local tbClass = Extends("LuaA")
+
+function tbClass:Test()
+	print("hehe")
+end
+```
+
+### 内存池
+
+>1. 由于本人能力有限，经实际效率测试，目前仅保留非线程安全的对象Pool（Pool.h）
+2. Pool加锁后可用于多线程，但经测试效率还不及系统的new，但Linux下相差不大，如果考虑到无内存碎片的优点，可以自行添加。
+3. 如果采用Application的模型，Pool基本上是够用的。因为逻辑主要在主线程的Tick中触发
+
+### 线程池模型
+
+First. 编写线程内的具体工作类，继承IRunnable.
+
+```cpp
+#include	<Runnable.h>
+
+class DemoTask : public IRunnable {
+public:
+	DemoTask(...) { ... }			//! 这里为该工作参数初始化
+	virtual ~DemoTask() { ... }		//! 这里为工作结束时清理操作
+
+	virtual void	Run() { ... }	//! 工作的具体内容
+
+private:
+	...		//! 参数声明
+};
+```
+
+Second. 对于单一工作的线程池，推荐使用容器Runnable<T>
+
+```cpp
+int main() {
+	Runnable<DemoTask>	iMgr(4);	//! 创建含有一个4个工作线程的容器
+
+	/// 增加100个并发任务（多余的会暂时等待空闲线程）
+	for (int i = 0; i < 100; ++i) {
+		iMgr.Create(...);	// 传入工作需要的参数，这里自动调用 new DemoTask(...);
+	}
+
+	/// 等待所有的工作结束，如果不执行该操作，iMgr超出生存期时会放弃未执行的任务。
+	iMgr.WaitAll();
+	return 0;
+}
+```
+
+Another. 对于多种类型任务共用一个线程池时，请使用ThreadPool.
+
+```cpp
+int main() {
+	ThreadPool iMgr(4);
+
+	/// 添加一种任务
+	for (int i = 0; i < 50; ++i) {
+		iMgr.AddRunnable(new DemoTask(...));	//! 请务必使用new，因为当工作结束时会自动调用delete
+	}
+
+	/// 添加另一种任务
+	for (int j = 0; j < 50; ++j) {
+		iMgr.AddRunnable(new DemoTask2(...));
+	}
+
+	iMgr.WaitAll();
+	return 0;
+}
+```
+
+### Redis
+
+1. 头文件：Redis.h
+2. 所有的操作都是异步的
+3. 如果使用Application模型，请不要调用Breath，系统会自动调用，且回调都是在主线程中（可使用Lua）
+
+### 工具库
+
+1. 单例模型：ISingleton(Singleton.h)
+2. 生存域模型：Guard(Guard.h)
+3. 其他：Utils.h
+
+### 配置库
+
+1. CSV文件的读取见：CsvFile（CsvFile.h）
+2. INI文件的读取见：IniFile（IniFile.h）
+3. 命令行参数解析：Command（Command.h）
+
+### 数学
+
+1. CRC32算法：CalcCRC（Crypto.h）
+2. BKDRHash算法：CalcHash（Crypto.h）
+3. MD5工具：MD5（Crypto.h）
+4. ZIP压缩/解压缩算法：Zip（Compress.h）
+
+### 系统相关
+
+1. 高精度时间。DateTime.h
+2. 文件系统。Path.h

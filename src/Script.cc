@@ -35,10 +35,31 @@ int LuaMetatableProxy::Include(lua_State * pL) {
 	return lua_gettop(pL) - nTop;
 }
 
-int LuaMetatableProxy::Class(lua_State * pL) {
-	const char * sClass = lua_tostring(pL, -1);
-	luaL_getmetatable(pL, sClass);
-	if (lua_isnil(pL, -1)) luaL_error(pL, "Class '%s' not registered!!!", sClass);
+int LuaMetatableProxy::Extends(lua_State * pL) {
+	const char * sName = lua_tostring(pL, -1);
+
+	lua_getglobal(pL, sName);
+	if (lua_istable(pL, -1)) {
+		lua_getmetatable(pL, -1);
+		lua_remove(pL, -2);
+
+		if (lua_isnil(pL, -1)) {
+			lua_pop(pL, 1);
+			luaL_error(pL, "'%s' is not a registered class or namespace!!!", sName);
+		}
+	} else if (lua_isnil(pL, -1)) {
+		lua_pop(pL, 1);
+		luaL_getmetatable(pL, sName);
+
+		if (lua_isnil(pL, -1)) {
+			lua_pop(pL, 1);
+			luaL_error(pL, "'%s' is not a registered class or namespace!!!", sName);
+		}
+	} else {
+		lua_pop(pL, 1);
+		luaL_error(pL, "Class or namespace '%s' not registered!!!", sName);
+	}
+
 	return 1;
 }
 
@@ -200,8 +221,8 @@ LuaScript::LuaScript() : _pL(luaL_newstate()) {
 
 	luaL_openlibs(_pL);
 
-	lua_pushcfunction(_pL, &LuaMetatableProxy::Class);
-	lua_setglobal(_pL, "GetClass");
+	lua_pushcfunction(_pL, &LuaMetatableProxy::Extends);
+	lua_setglobal(_pL, "Extends");
 
 	lua_pushlightuserdata(_pL, this);
 	lua_pushcclosure(_pL, &LuaMetatableProxy::Include, 1);
