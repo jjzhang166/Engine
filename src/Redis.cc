@@ -80,7 +80,7 @@ bool Redis::Connect(const std::string & sHost, int nPort) {
 	/// Hook disconnect event.
 	redisAsyncSetDisconnectCallback(_pCtx, [](const redisAsyncContext * pCtx, int nStatus) {
 		Redis * p = static_cast<Redis *>(pCtx->data);
-		p->_emState = ERedis::Disconnected;
+		if(p->_emState != ERedis::Stoping) p->_emState = ERedis::Disconnected;
 		if (nStatus != REDIS_OK) LOG_ERR("Disconnect to redis server due to error : %s", pCtx->errstr);
 	});
 		
