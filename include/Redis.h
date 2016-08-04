@@ -9,16 +9,6 @@
 
 #define		GRedis	Redis::Instance()
 
-namespace ERedis {
-	enum State {
-		Success	= 0,
-		Running,
-		ConnectError,
-		AllocError,
-		EventError
-	};
-}
-
 class Redis {
 public:
 	typedef std::function<void(int64_t, bool)>				CBInt;	//! Integer callback. params are "retval" & "does_exists"
@@ -31,8 +21,8 @@ public:
 
 	static Redis &	Instance();
 
-	int		Connect(const std::string & sHost, int nPort);
-	bool	IsConnected() { return _bConnected; }
+	bool	Connect(const std::string & sHost, int nPort);
+	bool	IsConnected();
 	void	Close();
 	void	Breath(); //! NOTE: If using GRedis in application based on Application. You should never call this.
 
@@ -45,20 +35,19 @@ public:
 	bool	Set(const std::string & sKey, const std::string & sData) { return this->Set(sKey, sData.data(), sData.size()); }
 	bool	Set(const std::string & sKey, const char * pBuf, size_t nSize) { return this->Command("SET %s %b", sKey.c_str(), pBuf, nSize); }
 	bool	Del(const std::string & sKey) { return this->Command("DEL %s", sKey.c_str()); }
-
+			
 private:
-	void	__Reconnect();
-		
-private:
-	struct redisAsyncContext * _pCtx;
-	struct ev_loop * _pLoop;
-	bool _bRunning;
-	bool _bConnected;
-	uint64_t _nAllocId;
+	struct redisAsyncContext *	_pCtx;
+	struct ev_loop *			_pLoop;
+	int							_emState;
+	uint64_t					_nAllocId;
 
-	std::map<uint64_t, CBInt> _mCBInt;
-	std::map<uint64_t, CBStr> _mCBStr;
-	std::map<uint64_t, CBArr> _mCBArr;
+	std::map<uint64_t, CBInt>	_mCBInt;
+	std::map<uint64_t, CBStr>	_mCBStr;
+	std::map<uint64_t, CBArr>	_mCBArr;
+
+	std::string		_sHost;
+	int				_nPort;
 };
 
 #endif//!	__ENGINE_REDIS_H_INCLUDED__
