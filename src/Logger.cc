@@ -14,10 +14,7 @@
 
 using namespace std;
 
-static const char * __LOG_ERR = "ERR";
-static const char * __LOG_WRN = "WRN";
-static const char * __LOG_INF = "INF";
-static const char * __LOG_DBG = "DBG";
+static const char LOG_TYPE_DESC[] = "EWIDCCCCCCCCCCCCCCCCCCCCCC";
 
 Logger::Logger()
 	: _pFile(nullptr)
@@ -52,25 +49,17 @@ void Logger::Init(const string & sName, const string & sPath, size_t nMaxSize, E
 void Logger::Log(ELog::Level emLevel, const char * pFile, int nLine, const char * pFmt, ...) {
 	if (emLevel > _emMaxLevel) return;
 
-	const char * pType = __LOG_INF;
-	switch (emLevel) {
-	case ELog::Debug: pType = __LOG_DBG; break;
-	case ELog::Info: pType = __LOG_INF; break;
-	case ELog::Warning: pType = __LOG_WRN; break;
-	case ELog::Error: pType = __LOG_ERR; break;
-	}
-
 	std::unique_lock<std::mutex> iAuto(_iLock);
+	DateTime iCur;
 
-	DateTime iCur;	
 	if (_nLastDay != iCur.nDay || _nWrited >= _nMaxSize) __Create(&iCur);
 	if (!_pFile) return;
 
 	memset(_pBuf, 0, 1024 * 1024);
 
-	int nOffset = snprintf(_pBuf, 1024 * 1024, "[%04d-%02d-%02d %02d:%02d:%02d.%03d][%s][%s@%d] ", 
+	int nOffset = snprintf(_pBuf, 1024 * 1024, "[%04d-%02d-%02d %02d:%02d:%02d.%03d][%c][%s@%d] ", 
 		iCur.nYear, iCur.nMonth, iCur.nDay, iCur.nHour, iCur.nMin, iCur.nSec, iCur.nMSec,
-		pType, pFile, nLine);
+		LOG_TYPE_DESC[emLevel], pFile, nLine);
 	if (nOffset <= 0) return;
 
 	va_list args;
