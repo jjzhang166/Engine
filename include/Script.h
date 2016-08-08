@@ -183,6 +183,27 @@ private:
 	std::vector<std::string>	_vLoaded;
 };
 
+/**
+ * Helper tools to make session call.
+ **/
+template<class O>
+class LuaGuard {
+public:
+	LuaGuard(const char * sKey, O * p) : _sKey(sKey), _pOld(nullptr) {
+		if (LuaScript::Instance().Is<O *>(sKey)) _pOld = LuaScript::Instance().Get<O *>(sKey);
+		LuaScript::Instance().Set<O *>(sKey, p);
+	}
+
+	virtual ~LuaGuard() {
+		if (_pOld) LuaScript::Instance().Set<O *>(_sKey.c_str(), _pOld);
+		else LuaScript::Instance().Set<LuaNil>(_sKey.c_str(), GLuaNil);
+	}
+
+private:
+	std::string	_sKey;
+	O *			_pOld;
+};
+
 #include	"Script.inl"
 
 #endif//!	__ENGINE_SCRIPT_H_INCLUDED__
