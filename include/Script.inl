@@ -297,6 +297,20 @@ struct LuaMetatableProxy {
 		return ((*p)->**f)(i);
 	}
 
+	template<class O>
+	static int	ClassExternal(lua_State * pL) {
+		if (lua_gettop(pL) < 1) luaL_error(pL, "Class '%s' call function error syntax. Please use ':' instead of '.'!", LuaClassInfo<O>::Name.c_str());
+		if (!lua_isuserdata(pL, lua_upvalueindex(1))) luaL_error(pL, "Class '%s' call function error!", LuaClassInfo<O>::Name.c_str());
+
+		typedef int (*ClassExternalFunc)(LuaState &);
+
+		ClassExternalFunc f = (ClassExternalFunc)(lua_touserdata(pL, lua_upvalueindex(1)));
+		if (!f) luaL_error(pL, "Class '%s' call function error! nil", LuaClassInfo<O>::Name.c_str());
+
+		LuaState i(pL, 0);
+		return f(i);
+	}
+
 	template<class O, typename T>
 	static int	ClassGet(lua_State * pL) {
 		if (!lua_isuserdata(pL, lua_upvalueindex(1))) luaL_error(pL, "Class '%s' get property error!", LuaClassInfo<O>::Name.c_str());
@@ -700,6 +714,17 @@ LuaRegisterClass<O> & LuaRegisterClass<O>::Method(const char * sMethod, int (O::
 	lua_pushstring(_pL, sMethod);
 	new (lua_newuserdata(_pL, sizeof(ClassMemFunc))) ClassMemFunc(fOpt);
 	lua_pushcclosure(_pL, &LuaMetatableProxy::ClassFunc<O>, 1);
+	lua_rawset(_pL, -3);
+	lua_pop(_pL, 1);
+	return *this;
+}
+
+template<typename O>
+LuaRegisterClass<O> & LuaRegisterClass<O>::External(const char * sMethod, int (*fOpt)(LuaState &)) {
+	lua_rawgeti(_pL, LUA_REGISTRYINDEX, _nRef);
+	lua_pushstring(_pL, sMethod);
+	lua_pushlightuserdata(_pL, (void *)fOpt);
+	lua_pushcclosure(_pL, &LuaMetatableProxy::ClassExternal<O>, 1);
 	lua_rawset(_pL, -3);
 	lua_pop(_pL, 1);
 	return *this;
