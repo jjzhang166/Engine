@@ -105,6 +105,8 @@ public:
 	struct RemoteInfo {
 		uint32_t	nIP;
 		int			nPort;
+
+		std::string GetIP() const;
 	};
 
 public:

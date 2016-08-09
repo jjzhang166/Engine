@@ -740,6 +740,17 @@ void IServerSocket::Breath() {
 	_pCtx->Breath();
 }
 
+std::string IServerSocket::RemoteInfo::GetIP() const {
+	int nPart1 = nIP & 0xFF;
+	int nPart2 = (nIP >> 8) & 0xFF;
+	int nPart3 = (nIP >> 16) & 0xFF;
+	int nPart4 = (nIP >> 24) & 0xFF;
+	char pBuf[16] = { 0 };
+
+	snprintf(pBuf, 16, "%d.%d.%d.%d", nPart4, nPart3, nPart2, nPart1);
+	return std::string(pBuf);
+}
+
 #if defined(_WIN32)
 #undef FD_SETSIZE
 #endif
