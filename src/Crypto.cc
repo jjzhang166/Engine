@@ -135,7 +135,7 @@ std::string MD5::ToString() {
 	const uint8_t * p = Digest();
 
 	char pHex[64];
-	snprintf(pHex, 64, "%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X\0",
+	snprintf(pHex, 64, "%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X",
 		p[0], p[1], p[2], p[3],	p[4], p[5], p[6], p[7],
 		p[8], p[9], p[10], p[11], p[12], p[13], p[14], p[15]);
 	return std::string(pHex);
