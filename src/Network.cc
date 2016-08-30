@@ -249,7 +249,11 @@ int SocketContext::Connect(const string & sIP, int nPort) {
 	iAddr.sin_family	= AF_INET;
 	iAddr.sin_port		= htons(nPort);
 
+#if defined(_WIN32) && !defined(_MSC_VER)
+	iAddr.sin_addr.s_addr = inet_addr(sIP.c_str());
+#else
 	if (0 >= inet_pton(AF_INET, sIP.c_str(), &iAddr.sin_addr)) return ENet::BadParam;
+#endif
 	
 	if (connect(_nSocket, (struct sockaddr *)&iAddr, sizeof(struct sockaddr)) < 0) {
 		int nErr = SOCKET_ERR;
@@ -423,7 +427,11 @@ int ServerSocketContext::Listen(const string & sIP, int nPort) {
 	iAddr.sin_family		= AF_INET;
 	iAddr.sin_port			= htons(nPort);
 
+#if defined(_WIN32) && !defined(_MSC_VER)
+	iAddr.sin_addr.s_addr = inet_addr(sIP.c_str());
+#else
 	if (0 >= inet_pton(AF_INET, sIP.c_str(), &iAddr.sin_addr)) return ENet::BadParam;
+#endif
 
 	if (::bind(_nSocket, (sockaddr *) &iAddr, sizeof(sockaddr)) < 0) return SOCKET_ERR;
 	if (::listen(_nSocket, 512) < 0) return SOCKET_ERR;

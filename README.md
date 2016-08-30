@@ -82,8 +82,8 @@ bool GameApp::OnInit(Command & rCmd) {
 	...
 }
 
-/// 在主线程Tick中调用
-void GameApp::OnTick() {
+/// 在主线程Breath中调用
+void GameApp::OnBreath() {
 	GServer.Breath();	//! 触发一次累计已接收消息的处理。自动回调OnReceive
 }
 
