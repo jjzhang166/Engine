@@ -30,7 +30,14 @@ public:
 	 * \param	nArgc	Number of command line params.
 	 * \param	pArgv	Params in strings.
 	 **/
-	virtual void	Start(int nArgc, char * pArgv[]);
+	void Start(int nArgc, char * pArgv[]);
+
+	/**
+	 * Lock frame-per-second. Must be called in OnInit.
+	 *
+	 * \param	nFPS	frame/second will be locked.
+	 */
+	void LockFPS(int nFPS);
 
 	/**
 	 * Initialization for this application.
@@ -41,9 +48,9 @@ public:
 	virtual bool	OnInit(Command & rCmd) { return true; }
 
 	/**
-	 * Tick update in main thread.
+	 * Frame update in main thread.
 	 **/
-	virtual void	OnTick() {}
+	virtual void	OnBreath() {}
 
 	/**
 	 * Action to do before real exit.
@@ -55,6 +62,7 @@ public:
 private:
 	std::atomic<bool>							_bRun;
 	int											_nExit;
+	uint64_t									_nPerFrame;
 	std::map<int, std::function<void (int)>>	_mSignalHanders;
 
 	friend struct AppSignalDispatcher;

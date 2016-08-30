@@ -3,7 +3,7 @@ C++服务器编程底层库
 
 ## 特点
 1. Windows，Linux双平台（Windows下为静态库，主要方便开发者调试；Linux下为动态库，用于生产环境部署）
-2. 基本包含集成服务器常用模块（数学、文件系统、配置、日志、网络、脚本、时间、多线程、Redis等）
+2. 基本包含集成服务器常用模块（数学、文件系统、配置、日志、网络、脚本、时间、多线程等）
 3. 二次开发无平台配置，无其他依赖
 4. 基于C++11开发
 
@@ -17,8 +17,6 @@ C++服务器编程底层库
 ## 集成第三方说明
 1. Zip使用[miniz](https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/miniz/miniz_v115_r4.7z) v1.15 r4.
 2. [Lua](http://www.lua.org/ftp/lua-5.3.3.tar.gz) v5.3.3.
-3. Hiredis基于官方[hiredis](https://github.com/redis/hiredis) v0.13.3修改使之支持Windows平台。Redis类为Hiredis + libev.
-4. [Libev](http://dist.schmorp.de/libev/libev-4.22.tar.gz) v4.22.
 
 ## 模块
 
@@ -38,11 +36,14 @@ public:
 			Logger::Instance().Init("game", "logs", 1024 * 1024 * 4, ELog::Info);
 		}
 
+		/// 锁帧
+		LockFPS(20);
+
 		/// 填写其他初始化逻辑，当返回false时程序直接退出
 		return true;
 	}
 
-	virtual void	OnTick() override {
+	virtual void	OnBreath() override {
 		/// 这里填写需要每帧更新的逻辑
 	}
 };
@@ -220,12 +221,6 @@ LOG_DEBUG("Hello %d", 2);
 LOG_ERR("Error : %s", "Test");
 LOG_WARN("You have a warning");
 ```
-
-### Redis
-
-1. 头文件：Redis.h
-2. 所有的操作都是异步的
-3. 如果使用Application模型，请不要调用Breath，系统会自动调用，且回调都是在主线程中（可使用Lua）
 
 ### 工具库
 

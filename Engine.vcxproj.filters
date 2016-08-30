@@ -16,12 +16,6 @@
     <Filter Include="src\miniz">
       <UniqueIdentifier>{543d2dc5-06e1-4dce-8774-526a58fc5cf0}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\libev">
-      <UniqueIdentifier>{93cdbba5-5a21-4705-be62-88c4099038dc}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\hiredis">
-      <UniqueIdentifier>{7ca11f3b-0159-4785-8886-d8786779bdcc}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Application.h">
@@ -147,41 +141,8 @@
     <ClInclude Include="include\Lua\lualib.h">
       <Filter>include\lua</Filter>
     </ClInclude>
-    <ClInclude Include="include\Redis.h">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="include\Crypto.h">
       <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="src\libev\ev.h">
-      <Filter>src\libev</Filter>
-    </ClInclude>
-    <ClInclude Include="src\hiredis\async.h">
-      <Filter>src\hiredis</Filter>
-    </ClInclude>
-    <ClInclude Include="src\hiredis\dict.h">
-      <Filter>src\hiredis</Filter>
-    </ClInclude>
-    <ClInclude Include="src\hiredis\fmacros.h">
-      <Filter>src\hiredis</Filter>
-    </ClInclude>
-    <ClInclude Include="src\hiredis\hiredis.h">
-      <Filter>src\hiredis</Filter>
-    </ClInclude>
-    <ClInclude Include="src\hiredis\hiredis_ev.h">
-      <Filter>src\hiredis</Filter>
-    </ClInclude>
-    <ClInclude Include="src\hiredis\net.h">
-      <Filter>src\hiredis</Filter>
-    </ClInclude>
-    <ClInclude Include="src\hiredis\read.h">
-      <Filter>src\hiredis</Filter>
-    </ClInclude>
-    <ClInclude Include="src\hiredis\sds.h">
-      <Filter>src\hiredis</Filter>
-    </ClInclude>
-    <ClInclude Include="src\hiredis\win32.h">
-      <Filter>src\hiredis</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -328,32 +289,8 @@
     <ClCompile Include="src\Lua\lzio.c">
       <Filter>src\lua</Filter>
     </ClCompile>
-    <ClCompile Include="src\Redis.cc">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="src\Crypto.cc">
       <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="src\libev\ev.c">
-      <Filter>src\libev</Filter>
-    </ClCompile>
-    <ClCompile Include="src\hiredis\async.c">
-      <Filter>src\hiredis</Filter>
-    </ClCompile>
-    <ClCompile Include="src\hiredis\dict.c">
-      <Filter>src\hiredis</Filter>
-    </ClCompile>
-    <ClCompile Include="src\hiredis\hiredis.c">
-      <Filter>src\hiredis</Filter>
-    </ClCompile>
-    <ClCompile Include="src\hiredis\net.c">
-      <Filter>src\hiredis</Filter>
-    </ClCompile>
-    <ClCompile Include="src\hiredis\read.c">
-      <Filter>src\hiredis</Filter>
-    </ClCompile>
-    <ClCompile Include="src\hiredis\sds.c">
-      <Filter>src\hiredis</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

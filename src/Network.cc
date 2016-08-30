@@ -1,10 +1,11 @@
 #include	<Network.h>
 #include	<Guard.h>
+#include	<Logger.h>
+
 #include	<atomic>
 #include	<cstdlib>
 #include	<cstring>
 #include	<map>
-#include	<thread>
 
 #if defined(_WIN32)
 #	if !defined(MSG_DONTWAIT)
@@ -14,6 +15,7 @@
 #	define		FD_SETSIZE		4096
 #	include		<WinSock2.h>
 #	include		<WS2tcpip.h>
+#	pragma		comment(lib, "ws2_32.lib")
 
 typedef int socklen_t;
 
@@ -95,6 +97,57 @@ bool SocketBuffer::Read(char ** pData, size_t & nSize) {
 	nSize = *((size_t *)(_pMem[nPrev]));
 	*pData = _pMem[nPrev] + sizeof(size_t);
 	return nSize > 0;
+}
+
+class SocketGuard {
+public:
+	SocketGuard(ISocket * p, const string & sHost, int nPort);
+	virtual ~SocketGuard();
+
+	void	Start();
+
+private:
+	ISocket *	_p;
+	string	_sHost;
+	int			_nPort;
+	thread *	_pWorker;
+	bool		_bRunning;
+};
+
+SocketGuard::SocketGuard(ISocket * p, const string & sHost, int nPort)
+	: _p(p)
+	, _sHost(sHost)
+	, _nPort(nPort)
+	, _pWorker(nullptr)
+	, _bRunning(false) {}
+
+SocketGuard::~SocketGuard() {
+	_bRunning = false;
+	if (_pWorker) {
+		if (_pWorker->joinable()) _pWorker->join();
+		delete _pWorker;
+	}
+}
+
+void SocketGuard::Start() {
+	if (_bRunning) return;
+	_bRunning = true;
+
+	if (_pWorker) {
+		if (_pWorker->joinable()) _pWorker->join();
+		delete _pWorker;
+	}
+
+	_pWorker = new thread([this]() {
+		while (_bRunning) {
+			if (!_p->IsConnected()) {
+				int n = _p->Connect(_sHost, _nPort, false);
+				if (n != ENet::Success) LOG_WARN("Try to reconnect to [%s:%d] ... %d", _sHost.c_str(), _nPort, n);
+			}
+
+			this_thread::sleep_for(chrono::seconds(1));
+		}
+	});
 }
 
 class SocketContext {
@@ -240,8 +293,11 @@ void SocketContext::Close(ENet::Close emCode) {
 	closesocket(_nSocket);
 	_nSocket = INVALID_SOCKET;
 
-	if (_pIOWorker->joinable()) _pIOWorker->join();
-	delete _pIOWorker;
+	if (this_thread::get_id() != _pIOWorker->get_id()) {
+		if (_pIOWorker->joinable()) _pIOWorker->join();
+		delete _pIOWorker;
+	}
+
 	_pOwner->OnClose(emCode);
 }
 
@@ -261,7 +317,7 @@ bool SocketContext::Send(const char * pData, size_t nSize) {
 		#else
 			if (nErr == EAGAIN) {
 		#endif
-				this_thread::yield();
+				this_thread::sleep_for(chrono::nanoseconds(1));
 			} else {
 				return false;
 			}
@@ -295,13 +351,13 @@ void SocketContext::__IOThread() {
 
 		nCurRead = recv(_nSocket, pBuf, 65536, MSG_DONTWAIT);
 		if (nCurRead > 0) {
-			while (!_iBuffer.Write(pBuf, nCurRead)) this_thread::yield();
+			while (!_iBuffer.Write(pBuf, nCurRead)) this_thread::sleep_for(chrono::nanoseconds(1));
 	#if defined(_WIN32)
 		} else if (nCurRead < 0 && WSAEWOULDBLOCK == WSAGetLastError()) {
 	#else
 		} else if (nCurRead < 0 && errno == EAGAIN) {
 	#endif
-			this_thread::yield();
+			this_thread::sleep_for(chrono::nanoseconds(1));
 		} else {
 			Close(nCurRead == 0 ? ENet::Remote : ENet::BadData);
 			break;
@@ -413,7 +469,7 @@ bool ServerSocketContext::Send(uint64_t nConnId, const char * pData, size_t nSiz
 		#else
 			if (nErr == EAGAIN) {
 		#endif
-				this_thread::yield();
+				this_thread::sleep_for(chrono::nanoseconds(1));
 			} else {
 				return false;
 			}
@@ -444,7 +500,7 @@ void ServerSocketContext::Broadcast(const char * pData, size_t nSize) {
 			#else
 				if (nErr == EAGAIN) {
 			#endif
-					this_thread::yield();
+					this_thread::sleep_for(chrono::nanoseconds(1));
 				} else {
 					break;
 				}
@@ -505,7 +561,7 @@ void ServerSocketContext::Breath() {
 
 	for (size_t nReaded = 0; nReaded < nOffset;) {
 		SocketData * pHeader = (SocketData *)(pData + nReaded);
-		while (pHeader->nUsed == 0) this_thread::yield();
+		while (pHeader->nUsed == 0) this_thread::sleep_for(chrono::nanoseconds(1));
 
 		char * pCont = pData + nReaded + sizeof(SocketData);
 		_pOwner->OnReceive(pHeader->nConnId, pCont, pHeader->nSize - sizeof(SocketData));
@@ -576,6 +632,8 @@ void ServerSocketContext::__AcceptThread() {
 
 			_pOwner->OnAccept(nConnId, 0);
 		}
+
+		this_thread::sleep_for(chrono::milliseconds(1));
 	}
 }
 
@@ -589,10 +647,8 @@ void ServerSocketContext::__IOThread() {
 	while (_nSocket != INVALID_SOCKET) {
 	#if defined(_WIN32)
 		fd_set iRead = _tIO;
-		int nCount = select(0, &iRead, NULL, NULL, NULL);
-
-		if (nCount <= 0) {
-			this_thread::yield();
+		if (select(0, &iRead, NULL, NULL, NULL) <= 0) {
+			this_thread::sleep_for(chrono::milliseconds(50));
 			continue;
 		}
 
@@ -621,16 +677,11 @@ void ServerSocketContext::__IOThread() {
 				pData->nSize = nRecv;
 				pData->nUsed = 1;
 
-				while (!_iBuffer.Write(pTemp, nRecv)) this_thread::yield();
+				while (!_iBuffer.Write(pTemp, nRecv)) this_thread::sleep_for(chrono::nanoseconds(1));
 			}
 		}
 	#else
-		int nCount = epoll_wait(_tIO, pEvents, 4096, 1);
-
-		if (nCount <= 0) {
-			this_thread::yield();
-			continue;
-		}
+		int nCount = epoll_wait(_tIO, pEvents, 4096, 50);
 
 		for (int n = 0; n < nCount; ++n) {
 			if (pEvents[n].events & EPOLLIN) {
@@ -659,7 +710,7 @@ void ServerSocketContext::__IOThread() {
 					pData->nSize = nRecv;
 					pData->nUsed = 1;
 
-					while (!_iBuffer.Write(pTemp, nRecv)) this_thread::yield();
+					while (!_iBuffer.Write(pTemp, nRecv)) this_thread::sleep_for(chrono::nanoseconds(1));
 				}
 			}
 		}
@@ -675,12 +726,20 @@ ISocket::ISocket() : _pCtx(nullptr) {
 
 ISocket::~ISocket() {
 	Close();
-	delete _pCtx;
+	if (_pGuard) delete _pGuard;
+	if (_pCtx) delete _pCtx;
 }
 
-int ISocket::Connect(const string & sIP, int nPort) {
+int ISocket::Connect(const string & sIP, int nPort, bool bAutoReconnect /* = false */) {
 	if (sIP.empty() || nPort < 0) return ENet::BadParam;
-	return _pCtx->Connect(sIP, nPort);
+
+	int n = _pCtx->Connect(sIP, nPort);
+	if (n == ENet::Success && bAutoReconnect && !_pGuard) {
+		_pGuard = new SocketGuard(this, sIP, nPort);
+		_pGuard->Start();
+	}
+
+	return n;
 }
 
 bool ISocket::IsConnected() {
@@ -740,7 +799,7 @@ void IServerSocket::Breath() {
 	_pCtx->Breath();
 }
 
-std::string IServerSocket::RemoteInfo::GetIP() const {
+string IServerSocket::RemoteInfo::GetIP() const {
 	int nPart1 = nIP & 0xFF;
 	int nPart2 = (nIP >> 8) & 0xFF;
 	int nPart3 = (nIP >> 16) & 0xFF;
@@ -748,7 +807,7 @@ std::string IServerSocket::RemoteInfo::GetIP() const {
 	char pBuf[16] = { 0 };
 
 	snprintf(pBuf, 16, "%d.%d.%d.%d", nPart4, nPart3, nPart2, nPart1);
-	return std::string(pBuf);
+	return string(pBuf);
 }
 
 #if defined(_WIN32)

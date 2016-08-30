@@ -3,6 +3,7 @@
 
 #include	<cstdint>
 #include	<string>
+#include	<thread>
 
 namespace ENet {
 
@@ -44,9 +45,10 @@ public:
 	 *
 	 * \param	sIP		IP address of remote server.
 	 * \param	nPort	Port to connect to.
+	 * \param	bAutoReconnect	Set 'true' to enable auto-reconnect.
 	 * \return	Connect status. See ENet::Error for detail information.
 	 **/
-	int Connect(const std::string & sIP, int nPort);
+	int Connect(const std::string & sIP, int nPort, bool bAutoReconnect = false);
 
 	/**
 	 * Check connection status.
@@ -95,6 +97,7 @@ public:
 
 private:
 	class SocketContext *	_pCtx;
+	class SocketGuard *		_pGuard;
 };
 
 /**

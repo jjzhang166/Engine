@@ -1,6 +1,7 @@
 #include	<Application.h>
-#include	<Redis.h>
 #include	<Path.h>
+#include	<DateTime.h>
+
 #include	<csignal>
 #include	<thread>
 
@@ -25,7 +26,7 @@ void AppSignalDispatcher::OnSignal(int nSig) {
 	it->second(nSig);
 }
 
-Application::Application() : _bRun(false), _nExit(0) {
+Application::Application() : _bRun(false), _nExit(0), _nPerFrame(0) {
 	if (!AppSignalDispatcher::pIns)
 		AppSignalDispatcher::pIns = this;
 	else
@@ -41,21 +42,26 @@ void Application::Signal(int nSig, std::function<void (int)> fOpt) {
 
 void Application::Start(int nArgc, char * pArgv[]) {
 	if (nArgc > 0) Path::Change(Path::PurePath(pArgv[0]));
+	bool bDaemon = false;
 
-	Command iCmd(nArgc, pArgv);
+	{
+		Command iCmd(nArgc, pArgv);
+		bDaemon = iCmd.Has("--daemon");
+		if (!OnInit(iCmd)) return;
+	}
 
-#if !defined(_WIN32)
-	if (iCmd.Has("--daemon")) daemon(0, 0);
-
+#if defined(_WIN32)
+	(void)bDaemon;
+#else
 	signal(SIGPIPE, SIG_IGN);
 
 	struct rlimit iCore;
 	getrlimit(RLIMIT_CORE, &iCore);
 	iCore.rlim_cur = iCore.rlim_max;
 	setrlimit(RLIMIT_CORE, &iCore);
-#endif
 
-	if (!OnInit(iCmd)) return;
+	(void)daemon(0, 0);
+#endif
 
 	auto iExiter = [this](int nSig) {
 		_nExit = nSig;
@@ -64,13 +70,33 @@ void Application::Start(int nArgc, char * pArgv[]) {
 
 	Signal(SIGINT, iExiter);
 	Signal(SIGTERM, iExiter);
-	
+
 	_bRun = true;
-	while (_bRun) {
-		OnTick();
-		GRedis.Breath();
-		std::this_thread::yield();
+
+	if (_nPerFrame > 0) {
+		uint64_t nStart, nLeft;
+		while (_bRun) {
+			nStart = Tick();
+			OnBreath();
+			nLeft = _nPerFrame - Tick() + nStart;
+			if (nLeft > 0) std::this_thread::sleep_for(std::chrono::milliseconds(nLeft));
+			else std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		}
+	} else {
+		while (_bRun) {
+			OnBreath();
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		}
 	}
+	
 
 	OnExit(_nExit);
+}
+
+void Application::LockFPS(int nFPS) {
+#if defined(_WIN32)
+	_nPerFrame = (uint64_t)(1000.0f / nFPS) - 10; //! Windows BUG??
+#else
+	_nPerFrame = (uint64_t)(1000.0f / nFPS);
+#endif
 }
