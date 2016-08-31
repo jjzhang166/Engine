@@ -11,6 +11,8 @@
 #	include		<unistd.h>
 #endif
 
+extern void AutoNetworkBreath();
+
 struct AppSignalDispatcher {
 	static Application * pIns;
 	static void	OnSignal(int nSig);
@@ -60,7 +62,7 @@ void Application::Start(int nArgc, char * pArgv[]) {
 	iCore.rlim_cur = iCore.rlim_max;
 	setrlimit(RLIMIT_CORE, &iCore);
 
-	(void)daemon(0, 0);
+	if (bDaemon) (void)daemon(0, 0);
 #endif
 
 	auto iExiter = [this](int nSig) {
@@ -77,6 +79,7 @@ void Application::Start(int nArgc, char * pArgv[]) {
 		uint64_t nStart, nLeft;
 		while (_bRun) {
 			nStart = Tick();
+			AutoNetworkBreath();
 			OnBreath();
 			nLeft = _nPerFrame - Tick() + nStart;
 			if (nLeft > 0) std::this_thread::sleep_for(std::chrono::milliseconds(nLeft));
@@ -84,19 +87,15 @@ void Application::Start(int nArgc, char * pArgv[]) {
 		}
 	} else {
 		while (_bRun) {
+			AutoNetworkBreath();
 			OnBreath();
 			std::this_thread::sleep_for(std::chrono::milliseconds(1));
 		}
 	}
 	
-
 	OnExit(_nExit);
 }
 
 void Application::LockFPS(int nFPS) {
-#if defined(_WIN32)
-	_nPerFrame = (uint64_t)(1000.0f / nFPS) - 10; //! Windows BUG??
-#else
-	_nPerFrame = (uint64_t)(1000.0f / nFPS);
-#endif
+	_nPerFrame = (uint64_t)(1000.0f / nFPS) - 1;
 }

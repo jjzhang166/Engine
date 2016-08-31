@@ -12,8 +12,8 @@ public:
 	 * Get runtime singleton instance of this class.
 	 */
 	static O &	Instance() {
-		if (_iIns.get() == nullptr) _iIns.reset(new O);
-		return *(_iIns.get());
+		if (!_iIns) _iIns.reset(new O);
+		return *_iIns;
 	}
 
 	/**

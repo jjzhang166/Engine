@@ -3,7 +3,6 @@
 
 #include	<cstdint>
 #include	<string>
-#include	<thread>
 
 namespace ENet {
 
@@ -17,7 +16,7 @@ namespace ENet {
 		Closed,
 		Running,
 		Alloc,
-		Thread,
+		Epoll,
 		Timeout,
 		TooMany
 	};
@@ -71,7 +70,7 @@ public:
 
 	/**
 	 * Process all received data at once. This may invoke OnReceive() many times.
-	 * You should call this in your main event loop.
+	 * NOTE : Except using Application, you should call this in you main event loop.
 	 **/
 	void Breath();
 
@@ -164,7 +163,7 @@ public:
 
 	/**
 	 * Process all received data at once. This may invoke OnReceive() many times.
-	 * You should call this in your main event loop.
+	 * NOTE : Except using Application, you should call this in you main event loop.
 	 **/
 	void Breath();
 
@@ -172,9 +171,9 @@ public:
 	 * Invoked after a client try to connect to this server.
 	 *
 	 * \param	nConnId	Client identifier.
-	 * \param	nState	Connect status. See ENet::Error.
+	 * \param	iInfo	Remote information.
 	 **/
-	virtual void OnAccept(uint64_t nConnId, int nState) {}
+	virtual void OnAccept(uint64_t nConnId, const RemoteInfo & iInfo) {}
 
 	/**
 	 * Invoked by OnTick(). Jobs to with message received from client.

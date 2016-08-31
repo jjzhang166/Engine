@@ -17,6 +17,7 @@
     <ClInclude Include="include\Crypto.h" />
     <ClInclude Include="include\CsvFile.h" />
     <ClInclude Include="include\DateTime.h" />
+    <ClInclude Include="include\FastBuffer.h" />
     <ClInclude Include="include\Guard.h" />
     <ClInclude Include="include\IniFile.h" />
     <ClInclude Include="include\Logger.h" />
@@ -64,6 +65,7 @@
     <ClCompile Include="src\Crypto.cc" />
     <ClCompile Include="src\CsvFile.cc" />
     <ClCompile Include="src\DateTime.cc" />
+    <ClCompile Include="src\FastBuffer.cc" />
     <ClCompile Include="src\IniFile.cc" />
     <ClCompile Include="src\Logger.cc" />
     <ClCompile Include="src\Lua\lapi.c" />
@@ -100,7 +102,8 @@
     <ClCompile Include="src\Lua\lvm.c" />
     <ClCompile Include="src\Lua\lzio.c" />
     <ClCompile Include="src\Miniz\miniz.cc" />
-    <ClCompile Include="src\Network.cc" />
+    <ClCompile Include="src\Network.Unix.cc" />
+    <ClCompile Include="src\Network.Win32.cc" />
     <ClCompile Include="src\Path.cc" />
     <ClCompile Include="src\Runnable.cc" />
     <ClCompile Include="src\Script.cc" />
