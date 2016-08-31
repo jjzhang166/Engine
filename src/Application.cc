@@ -97,5 +97,5 @@ void Application::Start(int nArgc, char * pArgv[]) {
 }
 
 void Application::LockFPS(int nFPS) {
-	_nPerFrame = (uint64_t)(1000.0f / nFPS) - 1;
+	_nPerFrame = (uint64_t)(1000.0f / nFPS);
 }
