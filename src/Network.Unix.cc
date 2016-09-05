@@ -358,7 +358,7 @@ void ServerSocketContext::Breath() {
 				inet_ntop(AF_INET, &iAddr, pAddr, 128);
 
 				struct epoll_event iEv;
-				iEv.events = EPOLLIN | EPOLLET | EPOLLOUT;
+				iEv.events = EPOLLIN | EPOLLET;
 				iEv.data.fd = nAccept;
 
 				if (epoll_ctl(_nIO, EPOLL_CTL_ADD, nAccept, &iEv) < 0) {

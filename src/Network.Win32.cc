@@ -180,11 +180,12 @@ public:
 	IServerSocket::RemoteInfo	GetClientInfo(uint64_t nConnId);
 
 private:
-	IServerSocket *		_pOwner;
-	char *				_pReceived;
-	Connections			_mConns;
-	SOCKET				_nSocket;
-	fd_set				_tIO;
+	IServerSocket *			_pOwner;
+	char *					_pReceived;
+	Connections				_mConns;
+	SOCKET					_nSocket;
+	map<SOCKET, uint64_t>	_mSocket2ConnId;
+	fd_set					_tIO;
 };
 
 ServerSocketContext::ServerSocketContext(IServerSocket * pOwner)
@@ -192,6 +193,7 @@ ServerSocketContext::ServerSocketContext(IServerSocket * pOwner)
 	, _pReceived(new char[SOCKET_BUFSIZE])
 	, _mConns()
 	, _nSocket(INVALID_SOCKET)
+	, _mSocket2ConnId()
 	, _tIO() {
 	WSADATA wOut;
 	if (WSAStartup(MAKEWORD(2, 2), &wOut)) throw runtime_error("WinSock2 Startup failed!!!");
@@ -214,6 +216,7 @@ int ServerSocketContext::Listen(const string & sIP, int nPort) {
 		return WSAGetLastError();
 	}
 
+	_mSocket2ConnId.clear();
 	FD_ZERO(&_tIO);
 
 	struct sockaddr_in iAddr;
@@ -299,6 +302,7 @@ void ServerSocketContext::Close(uint64_t nConnId, ENet::Close emCode) {
 	_pOwner->OnClose(nConnId, emCode);
 
 	FD_CLR(it->second.nSocket, &_tIO);
+	_mSocket2ConnId.erase(it->second.nSocket);
 	closesocket(it->second.nSocket);
 	_mConns.erase(it);
 }
@@ -312,6 +316,7 @@ void ServerSocketContext::Shutdown() {
 	}
 
 	FD_ZERO(&_tIO);
+	_mSocket2ConnId.clear();
 	_mConns.clear();
 
 	closesocket(_nSocket);
@@ -321,6 +326,7 @@ void ServerSocketContext::Shutdown() {
 void ServerSocketContext::Breath() {
 	if (_nSocket == INVALID_SOCKET) return;
 	static fd_set iRead;
+	static uint64_t nAllocId = 0;
 
 	sockaddr_in iAddr;
 	int nSizeOfAddr = sizeof(iAddr);
@@ -330,7 +336,7 @@ void ServerSocketContext::Breath() {
 		SOCKET nAccept = accept(_nSocket, (sockaddr *)&iAddr, &nSizeOfAddr);
 		if (nAccept == INVALID_SOCKET) break;
 
-		uint64_t nConnId = (uint64_t)nAccept;
+		uint64_t nConnId = nAllocId++;
 		u_long nFlag = 1;
 
 		inet_ntop(AF_INET, &iAddr, pAddr, 128);
@@ -355,40 +361,41 @@ void ServerSocketContext::Breath() {
 		iRemote.nIP = iAddr.sin_addr.S_un.S_addr;
 		iRemote.nPort = iAddr.sin_port;
 
+		_mSocket2ConnId[nAccept] = nConnId;
 		_mConns[nConnId] = iInfo;
 		_pOwner->OnAccept(nConnId, iRemote);
 	}
 
 	memcpy(&iRead, &_tIO, sizeof(_tIO));
 
-	if (select(0, &iRead, 0, 0, 0) > 0) {
-		uint64_t nConnId;
-		int nReaded;
-		int nRecv;
+	if (select(0, &iRead, 0, 0, 0) <= 0) return;
 
-		for (u_int n = 0; n < iRead.fd_count; ++n) {
-			nConnId = (uint64_t)iRead.fd_array[n];
-			nReaded = 0;
+	for (u_int n = 0; n < iRead.fd_count; ++n) {
+		auto it = _mSocket2ConnId.find(iRead.fd_array[n]);
+		if (it == _mSocket2ConnId.end()) continue;
 
-			memset(_pReceived, 0, SOCKET_BUFSIZE);
+		uint64_t nConnId = it->second;
+		int nReaded = 0;
+		int nRecv = 0;
 
-			while (true) {
-				nRecv = recv(iRead.fd_array[n], _pReceived + nReaded, SOCKET_BUFSIZE - nReaded, 0);
-				if (nRecv > 0) {
-					nReaded += nRecv;
-					if (nReaded >= SOCKET_BUFSIZE) {
-						_pOwner->OnReceive(nConnId, _pReceived, nReaded);
-						memset(_pReceived, 0, SOCKET_BUFSIZE);
-						nReaded = 0;
-					}
-				} else if (nRecv < 0 && WSAGetLastError() == WSAEWOULDBLOCK) {
-					if (nReaded > 0) _pOwner->OnReceive(nConnId, _pReceived, nReaded);
-					break;
-				} else {
-					if (nReaded > 0) _pOwner->OnReceive(nConnId, _pReceived, nReaded);
-					Close(nConnId, nRecv == 0 ? ENet::Remote : ENet::BadData);
-					break;
+		memset(_pReceived, 0, SOCKET_BUFSIZE);
+
+		while (true) {
+			nRecv = recv(iRead.fd_array[n], _pReceived + nReaded, SOCKET_BUFSIZE - nReaded, 0);
+			if (nRecv > 0) {
+				nReaded += nRecv;
+				if (nReaded >= SOCKET_BUFSIZE) {
+					_pOwner->OnReceive(nConnId, _pReceived, nReaded);
+					memset(_pReceived, 0, SOCKET_BUFSIZE);
+					nReaded = 0;
 				}
+			} else if (nRecv < 0 && WSAGetLastError() == WSAEWOULDBLOCK) {
+				if (nReaded > 0) _pOwner->OnReceive(nConnId, _pReceived, nReaded);
+				break;
+			} else {
+				if (nReaded > 0) _pOwner->OnReceive(nConnId, _pReceived, nReaded);
+				Close(nConnId, nRecv == 0 ? ENet::Remote : ENet::BadData);
+				break;
 			}
 		}
 	}
