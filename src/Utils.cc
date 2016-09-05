@@ -1,4 +1,5 @@
 #include	<Utils.h>
+#include	<DateTime.h>
 
 #if defined(_WIN32)
 #	include		<Objbase.h>
@@ -64,6 +65,18 @@ template<> const char * Convert<const char *>(const string & s) {
 
 template<> string Convert<string>(const string & s) {
 	return s;
+}
+
+template<> DateTime Convert<DateTime>(const string & s) {
+	int nY, nMon, nD, nH, nM, nS;
+	
+#if defined(_MSC_VER)
+	sscanf_s(s.c_str(), "%d-%d-%d %d:%d:%d", &nY, &nMon, &nD, &nH, &nM, &nS);
+#else
+	sscanf(s.c_str(), "%d-%d-%d %d:%d:%d", &nY, &nMon, &nD, &nH, &nM, &nS);
+#endif
+
+	return DateTime(nY, nMon, nD, nH, nM, nS);
 }
 
 std::string ToString(bool b) { return b ? "T" : "F"; }

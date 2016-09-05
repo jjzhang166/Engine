@@ -5,6 +5,7 @@ CFLAGS		= -fPIC -O2 -pipe
 CXXFLAGS	= $(CFLAGS) -std=c++11
 INCS		= -I./include -I./include/lua
 LDFLAGS		= -lpthread -luuid
+SHELL		= /bin/bash
 
 LIBRARY		= libengine.so
 SRCDIR		= src src/miniz src/lua
