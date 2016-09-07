@@ -7,6 +7,39 @@
 
 LuaNil GLuaNil;
 
+static int __OverridePrint(lua_State * L) {
+	std::string sOutput;
+	sOutput.reserve(2048);
+
+	int n = lua_gettop(L);  /* number of arguments */
+	int i;
+
+	lua_Debug d;
+	memset(&d, 0, sizeof(d));
+
+	lua_getstack(L, 1, &d);
+	lua_getinfo(L, "Sln", &d);
+	lua_getglobal(L, "tostring");
+
+	for (i = 1; i <= n; i++) {
+		const char *s;
+		size_t l;
+		lua_pushvalue(L, -1);  /* function to be called */
+		lua_pushvalue(L, i);   /* value to print */
+		lua_call(L, 1, 1);
+		s = lua_tolstring(L, -1, &l);  /* get result */
+		if (s == NULL)
+			return luaL_error(L, "'tostring' must return a string to 'print'");
+
+		if (i > 1) sOutput.push_back('\t');
+		sOutput.append(s, l);
+		lua_pop(L, 1);  /* pop result */
+	}
+
+	Logger::Instance().Log(ELog::Info, d.source, d.currentline, "%s", sOutput.c_str());
+	return 0;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 /// Implements of LuaMetatableProxy
 ///////////////////////////////////////////////////////////////////////////////
@@ -223,6 +256,9 @@ LuaScript::LuaScript() : _pL(luaL_newstate()) {
 
 	lua_pushcfunction(_pL, &LuaMetatableProxy::Extends);
 	lua_setglobal(_pL, "Extends");
+
+	lua_pushcfunction(_pL, &__OverridePrint);
+	lua_setglobal(_pL, "print");
 
 	lua_pushlightuserdata(_pL, this);
 	lua_pushcclosure(_pL, &LuaMetatableProxy::Include, 1);
