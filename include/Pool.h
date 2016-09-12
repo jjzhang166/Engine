@@ -55,7 +55,7 @@ public:
 		pObj->~T();
 		memset(pObj, 0, sizeof(T));
 
-		Chunk * pNode = (Chunk *)((char)pObj - sizeof(Chunk));
+		Chunk * pNode = (Chunk *)((char *)pObj - sizeof(Chunk));
 		pNode->bUsed = false;
 		pNode->pNext = _pHead->pNext;
 		_pHead->pNext = pNode;
