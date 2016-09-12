@@ -59,7 +59,8 @@ void Application::Start(int nArgc, char * pArgv[]) {
 
 	struct rlimit iCore;
 	getrlimit(RLIMIT_CORE, &iCore);
-	iCore.rlim_cur = iCore.rlim_max;
+	iCore.rlim_cur = RLIM_INFINITY;
+	iCore.rlim_max = RLIM_INFINITY;
 	setrlimit(RLIMIT_CORE, &iCore);
 
 	if (bDaemon) (void)daemon(0, 0);
