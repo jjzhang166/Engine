@@ -336,11 +336,9 @@ void ServerSocketContext::Breath() {
 		SOCKET nAccept = accept(_nSocket, (sockaddr *)&iAddr, &nSizeOfAddr);
 		if (nAccept == INVALID_SOCKET) break;
 
-		uint64_t nConnId = nAllocId++;
-		u_long nFlag = 1;
-
 		inet_ntop(AF_INET, &iAddr, pAddr, 128);
 
+		u_long nFlag = 1;
 		if (ioctlsocket(nAccept, FIONBIO, &nFlag) != 0) {			
 			LOG_WARN("Failed accept client [%s] while setting non-block!!!", pAddr);
 			continue;
@@ -361,6 +359,7 @@ void ServerSocketContext::Breath() {
 		iRemote.nIP = iAddr.sin_addr.S_un.S_addr;
 		iRemote.nPort = iAddr.sin_port;
 
+		uint64_t nConnId = (nAllocId++);
 		_mSocket2ConnId[nAccept] = nConnId;
 		_mConns[nConnId] = iInfo;
 		_pOwner->OnAccept(nConnId, iRemote);
