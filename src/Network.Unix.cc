@@ -354,7 +354,8 @@ void ServerSocketContext::Breath() {
 				int nAccept = accept(_nSocket, (sockaddr *)&iAddr, &nSizeOfAddr);
 				if (nAccept < 0) break;
 
-				uint64_t nConnId = (nAllocId++);
+				uint64_t nConnId = nAllocId + 1;
+				nAllocId++;
 				inet_ntop(AF_INET, &iAddr, pAddr, 128);
 
 				struct epoll_event iEv;

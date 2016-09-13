@@ -359,7 +359,8 @@ void ServerSocketContext::Breath() {
 		iRemote.nIP = iAddr.sin_addr.S_un.S_addr;
 		iRemote.nPort = iAddr.sin_port;
 
-		uint64_t nConnId = (nAllocId++);
+		uint64_t nConnId = nAllocId + 1;
+		nAllocId++;
 		_mSocket2ConnId[nAccept] = nConnId;
 		_mConns[nConnId] = iInfo;
 		_pOwner->OnAccept(nConnId, iRemote);
