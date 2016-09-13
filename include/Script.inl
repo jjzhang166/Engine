@@ -91,6 +91,7 @@ template<> struct LuaPusher<double> { static void Do(lua_State * p, double n) { 
 template<> struct LuaPusher<const char *> { static void Do(lua_State * p, const char * s) { lua_pushstring(p, s); } };
 template<int N> struct LuaPusher<const char[N]> { static void Do(lua_State * p, const char * s) { lua_pushstring(p, s); } };
 template<> struct LuaPusher<std::string> { static void Do(lua_State * p, const std::string & s) { lua_pushlstring(p, s.data(), s.size()); } };
+template<> struct LuaPusher<const std::string> { static void Do(lua_State * p, const std::string & s) { lua_pushlstring(p, s.data(), s.size()); } };
 template<> struct LuaPusher<LuaNil> { static void Do(lua_State * p, LuaNil & r) { lua_pushnil(p); } };
 template<> struct LuaPusher<LuaTable> { static void Do(lua_State * p, LuaTable & r) { r.Push(); } };
 template<typename T> struct LuaPusher<T *> {
