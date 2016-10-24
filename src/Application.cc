@@ -63,7 +63,7 @@ void Application::Start(int nArgc, char * pArgv[]) {
 	iCore.rlim_max = RLIM_INFINITY;
 	setrlimit(RLIMIT_CORE, &iCore);
 
-	if (bDaemon) (void)daemon(0, 0);
+	if (bDaemon) (void)daemon(1, 0);
 #endif
 
 	auto iExiter = [this](int nSig) {
