@@ -39,7 +39,7 @@ DateTime::DateTime() {
 	GetLocalTime(&iInfo);
 
 	nYear		= iInfo.wYear;
-	nMonth		= iInfo.wMonth + 1;
+	nMonth		= iInfo.wMonth;
 	nDay	 	= iInfo.wDay;
 	nWeek		= iInfo.wDayOfWeek;
 	nHour		= iInfo.wHour;
