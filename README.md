@@ -234,6 +234,7 @@ LOG_WARN("You have a warning");
 1. CSV文件的读取见：CsvFile（CsvFile.h）
 2. INI文件的读取见：IniFile（IniFile.h）
 3. 命令行参数解析：Command（Command.h）
+4. JSON文件，使用jsoncpp：Json::Value, Json::Reader (Json.h)
 
 ### 数学
 
