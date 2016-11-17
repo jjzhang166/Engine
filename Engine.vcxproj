@@ -20,6 +20,7 @@
     <ClInclude Include="include\FastBuffer.h" />
     <ClInclude Include="include\Guard.h" />
     <ClInclude Include="include\IniFile.h" />
+    <ClInclude Include="include\Json.h" />
     <ClInclude Include="include\Logger.h" />
     <ClInclude Include="include\Lua\lauxlib.h" />
     <ClInclude Include="include\Lua\lua.h" />
@@ -67,6 +68,7 @@
     <ClCompile Include="src\DateTime.cc" />
     <ClCompile Include="src\FastBuffer.cc" />
     <ClCompile Include="src\IniFile.cc" />
+    <ClCompile Include="src\Json.cc" />
     <ClCompile Include="src\Logger.cc" />
     <ClCompile Include="src\Lua\lapi.c" />
     <ClCompile Include="src\Lua\lauxlib.c" />

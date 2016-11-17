@@ -147,6 +147,9 @@
     <ClInclude Include="include\FastBuffer.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="include\Json.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="include\Script.inl">
@@ -299,6 +302,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\FastBuffer.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Json.cc">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

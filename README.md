@@ -17,6 +17,7 @@ C++服务器编程底层库
 ## 集成第三方说明
 1. Zip使用[miniz](https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/miniz/miniz_v115_r4.7z) v1.15 r4.
 2. [Lua](http://www.lua.org/ftp/lua-5.3.3.tar.gz) v5.3.3.
+3. 集成[Jsoncpp](https://github.com/open-source-parsers/jsoncpp)
 
 ## 模块
 
