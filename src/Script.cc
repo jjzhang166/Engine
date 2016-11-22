@@ -252,6 +252,17 @@ void LuaTable::Unref() {
 	}
 }
 
+int LuaTable::Size() {
+	if (_pL && _nRef != LUA_NOREF) {
+		lua_rawgeti(_pL, LUA_REGISTRYINDEX, _nRef);
+		int n = (int)luaL_len(_pL, -1);
+		lua_pop(_pL, 1);
+		return n;
+	} else {
+		return 0;
+	}
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 /// Implements of LuaRegister.
 ///////////////////////////////////////////////////////////////////////////////

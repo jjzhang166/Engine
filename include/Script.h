@@ -72,6 +72,8 @@ public:
 	void	Push();
 	void	Unref();
 
+	int		Size();
+
 	template<typename T>
 	bool	Is(int nIdx);
 
