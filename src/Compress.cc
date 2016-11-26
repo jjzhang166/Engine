@@ -3,6 +3,7 @@
 #include	"miniz/miniz.h"
 
 Zip::Zip() : _pZip(new mz_zip_archive), _bValid(false), _vItems() {
+	memset(_pZip, 0, sizeof(mz_zip_archive));
 }
 
 Zip::~Zip() {
