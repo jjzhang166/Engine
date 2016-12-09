@@ -4410,20 +4410,22 @@ void FastWriter::writeValue(const Value& value) {
   case objectValue: {
     Value::Members members(value.getMemberNames());
     document_ += '{';
+    bool bHas = false;
 
-	for (size_t i = 0; i < members.size(); ++i) {
-		const JSONCPP_STRING& name = members[i];
-		const Value& child = value[name];
+  	for (size_t i = 0; i < members.size(); ++i) {
+  		const JSONCPP_STRING& name = members[i];
+  		const Value& child = value[name];
 
-		if (child.isNull() || name.compare("step") == 0) continue;
+  		if (child.isNull()) continue;
 
-		document_ += valueToQuotedStringN(name.data(), static_cast<unsigned>(name.length()));
-		document_ += yamlCompatiblityEnabled_ ? ": " : ":";
-		writeValue(value[name]);
-		document_ += ',';
-	}
+      bHas = true;
+  		document_ += valueToQuotedStringN(name.data(), static_cast<unsigned>(name.length()));
+  		document_ += yamlCompatiblityEnabled_ ? ": " : ":";
+  		writeValue(value[name]);
+  		document_ += ',';
+  	}
 
-	document_.pop_back();
+    if (bHas) document_.pop_back();
     document_ += '}';
   } break;
   }
@@ -4483,24 +4485,24 @@ void StyledWriter::writeValue(const Value& value) {
     else {
       writeWithIndent("{");
       indent();
+      bool bHas = false;
 
-	  for (size_t i = 0; i < members.size(); ++i) {
-		  const JSONCPP_STRING& name = members[i];
-		  const Value& child = value[name];
-		  
-		  if (child.isNull() || name.compare("step") == 0) {
-			  continue;
-		  }
+  	  for (size_t i = 0; i < members.size(); ++i) {
+  		  const JSONCPP_STRING& name = members[i];
+  		  const Value& child = value[name];
+  		  
+  		  if (child.isNull()) continue;
 
-		  writeWithIndent(valueToQuotedString(name.c_str()));
-		  document_ += " : ";
-		  writeValue(child);
-		  document_ += ',';
-	  }
+        bHas = true;
+  		  writeWithIndent(valueToQuotedString(name.c_str()));
+  		  document_ += " : ";
+  		  writeValue(child);
+  		  document_ += ',';
+  	  }
 
-	  document_.pop_back();
-	  unindent();
-	  writeWithIndent("}");
+  	  if (bHas) document_.pop_back();
+  	  unindent();
+  	  writeWithIndent("}");
     }
   } break;
   }
