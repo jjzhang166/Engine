@@ -16,7 +16,7 @@ C++服务器编程底层库
 
 ## 集成第三方说明
 1. Zip使用[miniz](https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/miniz/miniz_v115_r4.7z) v1.15 r4.
-2. [Lua](http://www.lua.org/ftp/lua-5.3.3.tar.gz) v5.3.3.
+2. [Lua](http://www.lua.org/ftp/lua-5.3.4.tar.gz) v5.3.4.
 3. 集成[Jsoncpp](https://github.com/open-source-parsers/jsoncpp)
 
 ## 模块
@@ -85,7 +85,8 @@ bool GameApp::OnInit(Command & rCmd) {
 
 /// 在主线程Breath中调用
 void GameApp::OnBreath() {
-	GServer.Breath();	//! 触发一次累计已接收消息的处理。自动回调OnReceive
+//	Application 模型中不需要手动调用Breath，底层自动调用
+//	GServer.Breath();	//! 触发一次累计已接收消息的处理。自动回调OnReceive
 }
 
 ```
