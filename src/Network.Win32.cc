@@ -614,7 +614,7 @@ string IServerSocket::RemoteInfo::GetIP() const {
 	int n3 = (nIP >> 16) & 0xFF;
 	int n4 = (nIP >> 24) & 0xFF;
 
-	snprintf(pAddr, 16, "%d.%d.%d.%d", n4, n3, n2, n1);
+	snprintf(pAddr, 16, "%d.%d.%d.%d", n1, n2, n3, n4);
 	return string(pAddr);
 }
 
