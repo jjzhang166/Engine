@@ -18,10 +18,20 @@ extern "C" {
 /**
  * Reference type for template programing.
  **/
-template<typename T> struct LuaRefOf { typedef T Type; };
+template<typename T> struct LuaRefOf { typedef T & Type; };
+template<> struct LuaRefOf<bool> { typedef bool Type; };
+template<> struct LuaRefOf<int8_t> { typedef int8_t Type; };
+template<> struct LuaRefOf<int16_t> { typedef int16_t Type; };
+template<> struct LuaRefOf<int32_t> { typedef int32_t Type; };
+template<> struct LuaRefOf<int64_t> { typedef int64_t Type; };
+template<> struct LuaRefOf<uint8_t> { typedef uint8_t Type; };
+template<> struct LuaRefOf<uint16_t> { typedef uint16_t Type; };
+template<> struct LuaRefOf<uint32_t> { typedef uint32_t Type; };
+template<> struct LuaRefOf<uint64_t> { typedef uint64_t Type; };
+template<> struct LuaRefOf<float> { typedef float Type; };
+template<> struct LuaRefOf<double> { typedef double Type; };
+template<> struct LuaRefOf<const char *> { typedef const char * Type; };
 template<> struct LuaRefOf<std::string> { typedef const std::string & Type; };
-template<> struct LuaRefOf<class LuaNil> { typedef LuaNil & Type; };
-template<> struct LuaRefOf<class LuaTable> { typedef LuaTable & Type; };
 
 /**
  * LUA nil type in C++
