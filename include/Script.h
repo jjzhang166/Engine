@@ -16,6 +16,15 @@ extern "C" {
 #define		GLua		LuaScript::Instance()
 
 /**
+ * Declare enum as integer in LUA.
+ */
+#define		DECLARE_LUA_ENUM(Type) \
+template<> struct LuaPusher<Type> { static void Do(lua_State * p, Type t) { lua_pushinteger(p, (lua_Integer)t); } }; \
+template<> struct LuaGetter<Type> { static Type Do(lua_State * p, int n) { return (Type)lua_tointeger(p, n); } }; \
+template<> struct LuaTypeAssert<Type> { static bool Is(int n) { return n == LUA_TNUMBER; } }; \
+template<> struct LuaTypeName<Type> { static const char * Get() { return "integer"; } };
+
+/**
  * Reference type for template programing.
  **/
 template<typename T> struct LuaRefOf { typedef T & Type; };
