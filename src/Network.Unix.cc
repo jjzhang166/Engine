@@ -177,6 +177,7 @@ public:
 	int		Listen(const string & sIP, int nPort);
 	bool	Send(uint64_t nConnId, const char * pData, size_t nSize);
 	void	Broadcast(const char * pData, size_t nSize);
+	bool	IsValid(uint64_t nConnId) { return _mConns.find(nConnId) != _mConns.end(); }
 	void	Close(uint64_t nConnId, ENet::Close emCode);
 	void	Shutdown();
 	void	Breath();
@@ -598,6 +599,10 @@ bool IServerSocket::Send(uint64_t nConnId, const char * pData, size_t nSize) {
 void IServerSocket::Broadcast(const char * pData, size_t nSize) {
 	if (!pData || nSize <= 0) return;
 	_pCtx->Broadcast(pData, nSize);
+}
+
+bool IServerSocket::IsValid(uint64_t nConnId) {
+	return _pCtx->IsValid(nConnId);
 }
 
 void IServerSocket::Close(uint64_t nConnId) {
