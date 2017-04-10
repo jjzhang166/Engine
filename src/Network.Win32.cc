@@ -327,6 +327,7 @@ void ServerSocketContext::Breath() {
 	if (_nSocket == INVALID_SOCKET) return;
 	static fd_set iRead;
 	static uint64_t nAllocId = 0;
+	static struct timeval iWait = { 0, 1 };
 
 	sockaddr_in iAddr;
 	int nSizeOfAddr = sizeof(iAddr);
@@ -368,7 +369,7 @@ void ServerSocketContext::Breath() {
 
 	memcpy(&iRead, &_tIO, sizeof(_tIO));
 
-	if (select(0, &iRead, 0, 0, 0) <= 0) return;
+	if (select(0, &iRead, 0, 0, &iWait) <= 0) return;
 
 	for (u_int n = 0; n < iRead.fd_count; ++n) {
 		auto it = _mSocket2ConnId.find(iRead.fd_array[n]);
