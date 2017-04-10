@@ -33,13 +33,13 @@ bool Path::Create(const string & sPath) {
 }
 
 string Path::Current() {
-	std::string sPath(512, '0');
+	char pBuf[512] = { 0 };
 #if defined(_WIN32)
-	_getcwd((char *)sPath.c_str(), 512);
+	_getcwd(pBuf, 512);
 #else
-	getcwd((char *)sPath.c_str(), 512);
+	getcwd(pBuf, 512);
 #endif
-	return std::move(sPath);
+	return std::string(pBuf);
 }
 
 bool Path::Change(const string & sPath) {
@@ -51,13 +51,13 @@ bool Path::Change(const string & sPath) {
 }
 
 string Path::FullPath(const string & sPath) {
-	string s(512, '0');
+	char pBuf[512] = { 0 };
 #if defined(_WIN32)
-	if (0 >= GetFullPathNameA(sPath.c_str(), 512, (char *)s.c_str(), NULL)) return sPath;
+	if (0 >= GetFullPathNameA(sPath.c_str(), 512, pBuf, NULL)) return sPath;
 #else
-	if (!realpath(sPath.c_str(), (char *)s.c_str())) return sPath;
+	if (!realpath(sPath.c_str(), pBuf)) return sPath;
 #endif
-	return std::move(s);
+	return std::string(pBuf);
 }
 
 string Path::PurePath(const string & sPath) {
