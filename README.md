@@ -97,8 +97,7 @@ void GameApp::OnBreath() {
 2. 涉及到Get操作，需要try...catch以捕获类型异常（C++注册到Lua的接口内Get不需要，调用函数不需要）
 3. Property可以为地址方式，也可以为Getter(T (void))、Setter(void (reference type T))方式注册
 4. Method必须为`int (*f)(LuaState &)`
-5. Lua中如果需要控制加载顺序，请使用`include`，加载第三方Module时，请使用`require`
-6. Lua不可用于多线程，只能在主线程中使用，但可以使用协程。
+5. Lua不可用于多线程，只能在主线程中使用，但可以使用协程。
 
 ```cpp
 #include	<Script.h>

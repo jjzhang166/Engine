@@ -96,6 +96,11 @@ template<> struct LuaPusher<LuaNil> { static void Do(lua_State * p, LuaNil & r) 
 template<> struct LuaPusher<LuaTable> { static void Do(lua_State * p, LuaTable & r) { r.Push(); } };
 template<typename T> struct LuaPusher<T *> {
 	static void Do(lua_State * p, T * u) {
+		if (u == nullptr) {
+			lua_pushnil(p);
+			return;
+		}
+
 		T ** pData = static_cast<T **>(lua_newuserdata(p, sizeof(T *)));
 		*pData = u;
 		luaL_getmetatable(p, LuaClassInfo<T>::Name.c_str());
@@ -128,7 +133,6 @@ struct LuaMultPusher {
 ///////////////////////////////////////////////////////////////////////////////
 struct LuaMetatableProxy {
 	static int	Readonly(lua_State * pL);
-	static int	Include(lua_State * pL);
 	static int	Extends(lua_State * pL);
 	static int	Index(lua_State * pL);
 	static int	NewIndex(lua_State * pL);

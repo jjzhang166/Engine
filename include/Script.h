@@ -167,7 +167,8 @@ public:
 
 	static LuaScript &	Instance();
 
-	void		DoFile(const char * sFile, bool bRequireOnce = true, bool bRestoreStack = true);
+	void		Require(const char * sFile);
+	void		DoFile(const char * sFile);
 	void		Run(const char * sCode);
 	LuaState	Stack();
 	void		GC();
@@ -200,8 +201,7 @@ private:
 	LuaScript & operator=(const LuaScript &) = delete;
 
 private:
-	lua_State *					_pL;
-	std::vector<std::string>	_vLoaded;
+	lua_State *	_pL;
 };
 
 /**

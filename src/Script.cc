@@ -1,6 +1,7 @@
 #include	<Script.h>
 #include	<Path.h>
 #include	<Logger.h>
+#include	<Utils.h>
 
 #include	<algorithm>
 #include	<memory>
@@ -78,27 +79,6 @@ static int __PrintErr(lua_State * L) {
 ///////////////////////////////////////////////////////////////////////////////
 int LuaMetatableProxy::Readonly(lua_State * pL) {
 	return luaL_error(pL, "Property '%s' is read-only!!!", lua_tostring(pL, lua_upvalueindex(1)));
-}
-
-int LuaMetatableProxy::Include(lua_State * pL) {
-	if (!lua_islightuserdata(pL, lua_upvalueindex(1))) {
-		luaL_error(pL, "Include must based on a lua_State!!!");
-		return 0;
-	} else if (!lua_isstring(pL, -1)) {
-		luaL_error(pL, "Include bad parameter!!!");
-		return 0;
-	}
-
-	LuaScript * p = (LuaScript *)lua_touserdata(pL, lua_upvalueindex(1));
-	if (!p) {
-		luaL_error(pL, "Upvalue for include is not an instance of LuaScript.");
-		return 0;
-	}
-
-	const char * pFile = lua_tostring(pL, -1);
-	int nTop = lua_gettop(pL);
-	p->DoFile(pFile, true, false);
-	return lua_gettop(pL) - nTop;
 }
 
 int LuaMetatableProxy::Extends(lua_State * pL) {
@@ -306,10 +286,6 @@ LuaScript::LuaScript() : _pL(luaL_newstate()) {
 
 	lua_pushcfunction(_pL, &__PrintErr);
 	lua_setglobal(_pL, "print_err");
-
-	lua_pushlightuserdata(_pL, this);
-	lua_pushcclosure(_pL, &LuaMetatableProxy::Include, 1);
-	lua_setglobal(_pL, "include");
 }
 
 LuaScript::~LuaScript() {
@@ -322,12 +298,23 @@ LuaScript & LuaScript::Instance() {
 	return *(_iIns.get());
 }
 
-void LuaScript::DoFile(const char * sFile, bool bRequireOnce, bool bRestoreStack) {	
+void LuaScript::Require(const char * sFile) {
+	if (strlen(sFile) <= 4) return;
+
+	std::string sModule(sFile);
+	std::string sExt = ToUpper(sModule.substr(sModule.size() - 4));
+
+	if (sExt == ".LUA") sModule = sModule.substr(0, sModule.size() - 4);
+	sModule = Replace(sModule, "\\", ".");
+	sModule = Replace(sModule, "/", ".");
+
+	std::string sCode = "require '" + sModule + "';";
+	Run(sCode.c_str());
+}
+
+void LuaScript::DoFile(const char * sFile) {
 	int nTop = lua_gettop(_pL);
 	std::string sPath = Path::FullPath(sFile);
-
-	if (std::find(_vLoaded.begin(), _vLoaded.end(), sPath) != _vLoaded.end() && bRequireOnce) return;
-	_vLoaded.push_back(sPath);
 
 	lua_getglobal(_pL, "debug");
 	lua_getfield(_pL, -1, "traceback");
@@ -342,7 +329,7 @@ void LuaScript::DoFile(const char * sFile, bool bRequireOnce, bool bRestoreStack
 		lua_remove(_pL, nTop + 1);
 	} catch (...) {}
 
-	if (bRestoreStack) lua_settop(_pL, nTop);
+	lua_settop(_pL, nTop);
 }
 
 void LuaScript::Run(const char * sCode) {
