@@ -18,11 +18,12 @@ extern "C" {
 /**
  * Declare enum as integer in LUA.
  */
-#define		DECLARE_LUA_ENUM(Type) \
-template<> struct LuaPusher<Type> { static void Do(lua_State * p, Type t) { lua_pushinteger(p, (lua_Integer)t); } }; \
-template<> struct LuaGetter<Type> { static Type Do(lua_State * p, int n) { return (Type)lua_tointeger(p, n); } }; \
-template<> struct LuaTypeAssert<Type> { static bool Is(int n) { return n == LUA_TNUMBER; } }; \
-template<> struct LuaTypeName<Type> { static const char * Get() { return "integer"; } };
+#define		DECLARE_LUA_ENUM(T) \
+template<> struct LuaPusher<T> { static void Do(lua_State * p, T t) { lua_pushinteger(p, (lua_Integer)t); } }; \
+template<> struct LuaGetter<T> { static T Do(lua_State * p, int n) { return (T)lua_tointeger(p, n); } }; \
+template<> struct LuaTypeAssert<T> { static bool Is(int n) { return n == LUA_TNUMBER; } }; \
+template<> struct LuaTypeName<T> { static const char * Get() { return "integer"; } }; \
+template<> struct LuaRefOf<T> { typedef T Type; };
 
 /**
  * Reference type for template programing.
