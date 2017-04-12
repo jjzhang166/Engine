@@ -307,6 +307,7 @@ void LuaScript::Require(const char * sFile) {
 	if (sExt == ".LUA") sModule = sModule.substr(0, sModule.size() - 4);
 	sModule = Replace(sModule, "\\", ".");
 	sModule = Replace(sModule, "/", ".");
+	sModule = Replace(sModule, "..", ".");
 
 	std::string sCode = "require '" + sModule + "';";
 	Run(sCode.c_str());
