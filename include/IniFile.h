@@ -48,7 +48,7 @@ public:
 	 * \return	Value of this configuration. If the configuration does NOT exists, returns the default value.
 	 **/
 	template<typename T>
-	T Get(const std::string & sSession, const std::string & sKey, const T & rDefault) {
+	T Get(const std::string & sSession, const std::string & sKey, const T & rDefault) const {
 		auto itS = _mContent.find(sSession);
 		if (itS == _mContent.end()) return rDefault;
 

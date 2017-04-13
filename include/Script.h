@@ -153,6 +153,9 @@ public:
 	template<typename T>
 	LuaRegisterClass<O> &	Property(const char * sProp, T (O::*fGetter)(), void (O::*fSetter)(typename LuaRefOf<T>::Type) = 0);
 
+	template<typename T>
+	LuaRegisterClass<O> &	Property(const char * sProp, T(O::*fGetter)() const, void (O::*fSetter)(typename LuaRefOf<T>::Type) = 0);
+
 	LuaRegisterClass<O> &	Method(const char * sMethod, int (O::*fOpt)(LuaState &));
 
 	LuaRegisterClass<O> &	External(const char * sMethod, int(*fOpt)(LuaState &));

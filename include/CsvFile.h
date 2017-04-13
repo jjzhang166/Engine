@@ -36,7 +36,7 @@ public:
 	 * \return	Value of this data.
 	 **/
 	template<typename T>
-	T Get(int nIdx, const std::string & sKey, const T & tDefault) {
+	T Get(int nIdx, const std::string & sKey, const T & tDefault) const {
 		if (nIdx < 0 || (size_t)nIdx >= _vData.size()) return tDefault;
 		for (size_t nCol = 0; nCol < _vHeader.size(); ++nCol) {
 			if (_vHeader[nCol].compare(sKey) == 0) {

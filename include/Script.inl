@@ -355,6 +355,20 @@ struct LuaMetatableProxy {
 	}
 
 	template<class O, typename T>
+	static int	ClassConstGetter(lua_State * pL) {
+		if (!lua_isuserdata(pL, lua_upvalueindex(1))) luaL_error(pL, "Class '%s' get property by function error!", LuaClassInfo<O>::Name.c_str());
+
+		typedef T(O::*ClassConstGetFunc)() const;
+
+		O ** p = static_cast<O **>(lua_touserdata(pL, 1));
+		ClassConstGetFunc * f = static_cast<ClassConstGetFunc *>(lua_touserdata(pL, lua_upvalueindex(1)));
+		if (!f) luaL_error(pL, "Class '%s' get property by function error! nil", LuaClassInfo<O>::Name.c_str());
+
+		LuaPusher<T>::Do(pL, ((*p)->**f)());
+		return 1;
+	}
+
+	template<class O, typename T>
 	static int	ClassSetter(lua_State * pL) {
 		if (!lua_isuserdata(pL, lua_upvalueindex(1))) luaL_error(pL, "Class '%s' set property by function error!", LuaClassInfo<O>::Name.c_str());
 		
@@ -683,6 +697,48 @@ LuaRegisterClass<O> & LuaRegisterClass<O>::Property(const char * sProp, T (O::*f
 	}
 
 	typedef T (O::*ClassGetter)();
+
+	lua_pushstring(_pL, sProp);
+	new (lua_newuserdata(_pL, sizeof(ClassGetter))) ClassGetter(fGetter);
+	lua_pushcclosure(_pL, &LuaMetatableProxy::ClassGetter<O, T>, 1);
+	lua_rawset(_pL, -3);
+	lua_pop(_pL, 1);
+
+	lua_getfield(_pL, -1, "__propset");
+	if (!lua_istable(_pL, -1)) {
+		lua_settop(_pL, nTop);
+		luaL_error(_pL, "Try to add property on a class without metatable!!!");
+	}
+
+	lua_pushstring(_pL, sProp);
+	if (fSetter) {
+		typedef void (O::*ClassSetter)(typename LuaRefOf<T>::Type);
+		new (lua_newuserdata(_pL, sizeof(ClassSetter))) ClassSetter(fSetter);
+		lua_pushcclosure(_pL, &LuaMetatableProxy::ClassSetter<O, T>, 1);
+	} else {
+		lua_pushvalue(_pL, -1);
+		lua_pushcclosure(_pL, &LuaMetatableProxy::Readonly, 1);
+	}
+
+	lua_rawset(_pL, -3);
+	lua_settop(_pL, nTop);
+
+	return *this;
+}
+
+template<typename O> template<typename T>
+LuaRegisterClass<O> & LuaRegisterClass<O>::Property(const char * sProp, T (O::*fGetter)() const, void (O::*fSetter)(typename LuaRefOf<T>::Type)) {
+	int nTop = lua_gettop(_pL);
+
+	lua_rawgeti(_pL, LUA_REGISTRYINDEX, _nRef);
+
+	lua_getfield(_pL, -1, "__propget");
+	if (!lua_istable(_pL, -1)) {
+		lua_settop(_pL, nTop);
+		luaL_error(_pL, "Try to add property on a class without metatable!!!");
+	}
+
+	typedef T (O::*ClassGetter)() const;
 
 	lua_pushstring(_pL, sProp);
 	new (lua_newuserdata(_pL, sizeof(ClassGetter))) ClassGetter(fGetter);
