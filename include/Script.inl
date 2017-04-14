@@ -394,6 +394,11 @@ bool LuaState::Is(int nIdx) {
 
 template<typename T>
 T LuaState::Get(int nIdx) {
+	int nType = lua_type(_pL, nIdx);
+	if (!LuaTypeAssert<T>::Is(nType)) {
+		luaL_error(_pL, "Get index '%d' from table error. '%s' expected but got '%s'!!!", nIdx, LuaTypeName<T>::Get(), lua_typename(_pL, nType));
+	}
+
 	return LuaGetter<T>::Do(_pL, nIdx);
 }
 
