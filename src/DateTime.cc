@@ -108,7 +108,7 @@ DateTime::DateTime(uint64_t nHRTime) {
 
 	nYear		= iTime.tm_year + 1900;
 	nMonth		= iTime.tm_mon + 1;
-	nDay		= iTime.tm_mday + 1;
+	nDay		= iTime.tm_mday;
 	nWeek		= iTime.tm_wday;
 	nHour		= iTime.tm_hour;
 	nMin		= iTime.tm_min;
