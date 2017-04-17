@@ -1189,13 +1189,13 @@ LuaStack LuaVM::SelfCall(const std::string & sTable, const std::string & sFunc, 
 		lua_getglobal(_pL, sTable.c_str());
 		if (!lua_istable(_pL, -1)) {
 			lua_settop(_pL, nTop);
-			luaL_error(_pL, "Call %s.%s() error, %s is not a table!", sTable.c_str(), sFunc.c_str(), sTable.c_str());
+			luaL_error(_pL, "Call %s:%s() error, %s is not a table!", sTable.c_str(), sFunc.c_str(), sTable.c_str());
 		}
 
 		lua_getfield(_pL, -1, sFunc.c_str());
 		if (!lua_isfunction(_pL, -1)) {
 			lua_settop(_pL, nTop);
-			luaL_error(_pL, "Call %s.%s() error, %s is not a function!", sTable.c_str(), sFunc.c_str(), sFunc.c_str());
+			luaL_error(_pL, "Call %s:%s() error, %s is not a function!", sTable.c_str(), sFunc.c_str(), sFunc.c_str());
 		}
 
 		lua_pushvalue(_pL, -2);
