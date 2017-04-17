@@ -130,7 +130,7 @@ int GetAById(LuaState & r) {
 
 LUA中扩展C++注册的类或名空间（注只能扩展方法，不可扩展属性）
 ```lua
-local tbClass = Extends("LuaA")
+local tbClass = extends("LuaA")
 
 function tbClass:Test()
 	print("hehe")
