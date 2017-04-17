@@ -1,7 +1,7 @@
 ### Settings
 CC			= gcc
 CXX			= g++
-CFLAGS		= -fPIC -O2 -pipe -Wno-unused-result -DLUA_USE_LINUX
+CFLAGS		= -fPIC -O2 -pipe -Wno-unused-result -DLUA_COMPAT_5_2 -DLUA_USE_LINUX
 CXXFLAGS	= $(CFLAGS) -std=c++11
 INCS		= -I./include -I./include/lua
 LDFLAGS		= -lpthread -luuid -ldl
