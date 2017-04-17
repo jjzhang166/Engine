@@ -969,7 +969,7 @@ LuaNamespace & LuaNamespace::Property(const std::string & sProp, T (*fGetter)(),
 		lua_pushcclosure(_pL, &LuaProxy::Readonly, 1);
 	} else {
 		new (lua_newuserdata(_pL, sizeof(Setter))) Setter(fSetter);
-		lua_pushcclosure(_pL, &LuaProxy::Set<T>, 1);
+		lua_pushcclosure(_pL, &LuaProxy::Setter<T>, 1);
 	}
 	lua_rawset(_pL, -3);
 
