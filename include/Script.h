@@ -785,7 +785,7 @@ struct LuaProxy {
 	static int ClassSetter(lua_State * L) {
 		if (!lua_isuserdata(L, lua_upvalueindex(1))) luaL_error(L, "Class '%s' set property by function error!", LuaName<O *>::Of());
 
-		typedef void(O::*ClassSetFunc)(typename LuaRef<T>::Type) const;
+		typedef void(O::*ClassSetFunc)(typename LuaRef<T>::Type);
 
 		O ** p = (O **)lua_touserdata(L, 1);
 		ClassSetFunc * f = (ClassSetFunc *)lua_touserdata(L, lua_upvalueindex(1));
