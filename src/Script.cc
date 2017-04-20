@@ -256,7 +256,7 @@ void LuaVM::DoFile(const std::string & sFile, bool bRequre /* = false */) {
 			}
 		}
 
-		std::string sCode = "require " + sModule;
+		std::string sCode = "require '" + sModule + "'";
 		Run(sCode);
 	} else {
 		int nTop = lua_gettop(_pL);
