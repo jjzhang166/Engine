@@ -418,7 +418,7 @@ void ServerSocketContext::Breath() {
 Connection * ServerSocketContext::Find(uint64_t nConnId) {
 	auto it = _mConns.find(nConnId);
 	if (it == _mConns.end()) return nullptr;
-	return &(it->second);
+	return &_mConns[nConnId];
 }
 
 class SocketGuard {
