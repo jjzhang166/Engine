@@ -185,6 +185,7 @@ private:
 	char *				_pReceived;
 	int					_nSocket;
 	ConnectionMap		_mConns;
+	ConnectionMap		_mSocket2Conns;
 	int					_nIO;
 };
 
@@ -193,6 +194,7 @@ ServerSocketContext::ServerSocketContext(IServerSocket * pOwner)
 	, _pReceived(new char[SOCKET_BUFSIZE])
 	, _nSocket(-1)
 	, _mConns()
+	, _mSocket2Conns()
 	, _nIO(0) {}
 
 ServerSocketContext::~ServerSocketContext() {
@@ -314,7 +316,8 @@ void ServerSocketContext::Close(uint64_t nConnId, ENet::Close emCode) {
 	close(nSocket);
 	delete pConn;
 
-	_mConns.erase(it);
+	_mConns.erase(nConnId);
+	_mSocket2Conns.erase(nSocket);
 }
 
 void ServerSocketContext::Close(Connection * pConn, ENet::Close emCode) {
@@ -327,6 +330,7 @@ void ServerSocketContext::Close(Connection * pConn, ENet::Close emCode) {
 	delete pConn;
 
 	_mConns.erase(nConnId);
+	_mSocket2Conns.erase(nSocket);
 }
 
 void ServerSocketContext::Shutdown() {
@@ -342,6 +346,7 @@ void ServerSocketContext::Shutdown() {
 
 	epoll_ctl(_nIO, EPOLL_CTL_DEL, _nSocket, NULL);
 	_mConns.clear();
+	_mSocket2Conns.clear();
 
 	close(_nSocket);
 	_nSocket = -1;
@@ -389,38 +394,37 @@ void ServerSocketContext::Breath() {
 				pConn->pUserData	= nullptr;
 
 				_mConns[nConnId] = pConn;
+				_mSocket2Conns[(uint64_t)nAccept] = pConn;
+
 				_pOwner->OnAccept(pConn);
 			}
 		} else {
 			int nSocket = pEvents[i].data.fd;
 			int nReaded = 0;
 
-			for (auto & kv : _mConns) {
-				if (nSocket == kv.second->nSocket) {
-					memset(_pReceived, 0, SOCKET_BUFSIZE);
+			auto it = _mSocket2Conns.find((uint64_t)nSocket);
+			if (it == _mSocket2Conns.end()) continue;
 
-					while (true) {
-						int nRecv = (int)recv(nSocket, _pReceived + nReaded, SOCKET_BUFSIZE - nReaded, MSG_DONTWAIT);
-						if (nRecv > 0) {
-							nReaded += nRecv;
-							if (nReaded >= SOCKET_BUFSIZE) {
-								_pOwner->OnReceive(kv.second, _pReceived, nReaded);
-								memset(_pReceived, 0, SOCKET_BUFSIZE);
-								nReaded = 0;
-							}
-						} else if (nRecv < 0 && errno == EAGAIN) {
-							if (nReaded > 0) _pOwner->OnReceive(kv.second, _pReceived, nReaded);
-							break;
-						} else {
-							if (nReaded > 0) _pOwner->OnReceive(kv.second, _pReceived, nReaded);
-							Close(kv.second, nRecv == 0 ? ENet::Remote : ENet::BadData);
-							break;
-						}
+			memset(_pReceived, 0, SOCKET_BUFSIZE);
+
+			while (true) {
+				int nRecv = (int)recv(nSocket, _pReceived + nReaded, SOCKET_BUFSIZE - nReaded, MSG_DONTWAIT);
+				if (nRecv > 0) {
+					nReaded += nRecv;
+					if (nReaded >= SOCKET_BUFSIZE) {
+						_pOwner->OnReceive(it->second, _pReceived, nReaded);
+						memset(_pReceived, 0, SOCKET_BUFSIZE);
+						nReaded = 0;
 					}
-
+				} else if (nRecv < 0 && errno == EAGAIN) {
+					if (nReaded > 0) _pOwner->OnReceive(it->second, _pReceived, nReaded);
+					break;
+				} else {
+					if (nReaded > 0) _pOwner->OnReceive(it->second, _pReceived, nReaded);
+					Close(it->second, nRecv == 0 ? ENet::Remote : ENet::BadData);
 					break;
 				}
-			}			
+			}	
 		}
 	}
 }

@@ -181,6 +181,7 @@ private:
 	char *					_pReceived;
 	SOCKET					_nSocket;
 	ConnectionMap			_mConns;
+	ConnectionMap			_mSocket2Conns;
 	fd_set					_tIO;
 };
 
@@ -189,6 +190,7 @@ ServerSocketContext::ServerSocketContext(IServerSocket * pOwner)
 	, _pReceived(new char[SOCKET_BUFSIZE])
 	, _nSocket(INVALID_SOCKET)
 	, _mConns()
+	, _mSocket2Conns()
 	, _tIO() {
 	WSADATA wOut;
 	if (WSAStartup(MAKEWORD(2, 2), &wOut)) throw runtime_error("WinSock2 Startup failed!!!");
@@ -301,7 +303,8 @@ void ServerSocketContext::Close(uint64_t nConnId, ENet::Close emCode) {
 	closesocket(nSocket);
 	delete pConn;
 
-	_mConns.erase(it);
+	_mConns.erase(nConnId);
+	_mSocket2Conns.erase((uint64_t)nSocket);
 }
 
 void ServerSocketContext::Close(Connection * pConn, ENet::Close emCode) {
@@ -314,6 +317,7 @@ void ServerSocketContext::Close(Connection * pConn, ENet::Close emCode) {
 	delete pConn;
 
 	_mConns.erase(nConnId);
+	_mSocket2Conns.erase((uint64_t)nSocket);
 }
 
 void ServerSocketContext::Shutdown() {
@@ -328,6 +332,7 @@ void ServerSocketContext::Shutdown() {
 
 	FD_ZERO(&_tIO);
 	_mConns.clear();
+	_mSocket2Conns.clear();
 
 	closesocket(_nSocket);
 	_nSocket = INVALID_SOCKET;
@@ -375,6 +380,8 @@ void ServerSocketContext::Breath() {
 		pConn->pUserData	= nullptr;
 
 		_mConns[nConnId] = pConn;
+		_mSocket2Conns[(uint64_t)nAccept] = pConn;
+
 		_pOwner->OnAccept(pConn);
 	}
 
@@ -385,35 +392,32 @@ void ServerSocketContext::Breath() {
 	for (u_int n = 0; n < iRead.fd_count; ++n) {
 		SOCKET nSocket = iRead.fd_array[n];
 
-		for (auto & kv : _mConns) {
-			if (kv.second->nSocket == (int)nSocket) {
-				int nReaded = 0;
-				int nRecv = 0;
+		auto it = _mSocket2Conns.find((uint64_t)nSocket);
+		if (it == _mSocket2Conns.end()) continue;
 
-				memset(_pReceived, 0, SOCKET_BUFSIZE);
+		int nReaded = 0;
+		int nRecv = 0;
 
-				while (true) {
-					nRecv = recv(nSocket, _pReceived + nReaded, SOCKET_BUFSIZE - nReaded, 0);
-					if (nRecv > 0) {
-						nReaded += nRecv;
-						if (nReaded >= SOCKET_BUFSIZE) {
-							_pOwner->OnReceive(kv.second, _pReceived, nReaded);
-							memset(_pReceived, 0, SOCKET_BUFSIZE);
-							nReaded = 0;
-						}
-					} else if (nRecv < 0 && WSAGetLastError() == WSAEWOULDBLOCK) {
-						if (nReaded > 0) _pOwner->OnReceive(kv.second, _pReceived, nReaded);
-						break;
-					} else {
-						if (nReaded > 0) _pOwner->OnReceive(kv.second, _pReceived, nReaded);
-						Close(kv.second, nRecv == 0 ? ENet::Remote : ENet::BadData);
-						break;
-					}
+		memset(_pReceived, 0, SOCKET_BUFSIZE);
+
+		while (true) {
+			nRecv = recv(nSocket, _pReceived + nReaded, SOCKET_BUFSIZE - nReaded, 0);
+			if (nRecv > 0) {
+				nReaded += nRecv;
+				if (nReaded >= SOCKET_BUFSIZE) {
+					_pOwner->OnReceive(it->second, _pReceived, nReaded);
+					memset(_pReceived, 0, SOCKET_BUFSIZE);
+					nReaded = 0;
 				}
-
+			} else if (nRecv < 0 && WSAGetLastError() == WSAEWOULDBLOCK) {
+				if (nReaded > 0) _pOwner->OnReceive(it->second, _pReceived, nReaded);
+				break;
+			} else {
+				if (nReaded > 0) _pOwner->OnReceive(it->second, _pReceived, nReaded);
+				Close(it->second, nRecv == 0 ? ENet::Remote : ENet::BadData);
 				break;
 			}
-		}		
+		}
 	}
 }
 
