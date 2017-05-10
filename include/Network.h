@@ -184,26 +184,26 @@ public:
 	/**
 	 * Invoked after a client try to connect to this server.
 	 *
-	 * \param	rConn	Client information.
+	 * \param	pConn	Client information.
 	 **/
-	virtual void OnAccept(const Connection & rConn) {}
+	virtual void OnAccept(Connection * pConn) {}
 
 	/**
 	 * Invoked by OnTick(). Jobs to with message received from client.
 	 *
-	 * \param	rConn	Client information.
+	 * \param	pConn	Client information.
 	 * \param	pData	Pointer to message data buffer.
 	 * \param	nSize	Message size.
 	 **/
-	virtual void OnReceive(const Connection & rConn, char * pData, size_t nSize) = 0;
+	virtual void OnReceive(Connection * pConn, char * pData, size_t nSize) = 0;
 
 	/**
 	 * Invoked after a client disconnect with this server.
 	 *
-	 * \param	rConn	Client information.
+	 * \param	pConn	Client information.
 	 * \param	emCode	Close reason. See ENet::Close.
 	 **/
-	virtual void OnClose(const Connection & rConn, ENet::Close emCode) {}
+	virtual void OnClose(Connection * pConn, ENet::Close emCode) {}
 
 	/**
 	 * Action to do before server shutdown.

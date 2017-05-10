@@ -159,7 +159,7 @@ void SocketContext::Breath() {
 }
 
 class ServerSocketContext {
-	typedef map<uint64_t, Connection> ConnectionMap;
+	typedef map<uint64_t, Connection *> ConnectionMap;
 
 public:
 	ServerSocketContext(IServerSocket * pOwner);
@@ -170,7 +170,7 @@ public:
 	void	Broadcast(const char * pData, size_t nSize);
 	bool	IsValid(uint64_t nConnId) { return _mConns.find(nConnId) != _mConns.end(); }
 	void	Close(uint64_t nConnId, ENet::Close emCode);
-	void	Close(const Connection & rConn, ENet::Close emCode);
+	void	Close(Connection * pConn, ENet::Close emCode);
 	void	Shutdown();
 	void	Breath();
 
@@ -238,7 +238,7 @@ bool ServerSocketContext::Send(uint64_t nConnId, const char * pData, size_t nSiz
 	auto it = _mConns.find(nConnId);
 	if (it == _mConns.end()) return false;
 
-	SOCKET	nSocket	= (SOCKET)it->second.nSocket;
+	SOCKET	nSocket	= (SOCKET)it->second->nSocket;
 	char *	pSend	= (char *)pData;
 	int		nSend	= 0;
 	int		nLeft	= (int)nSize;
@@ -264,8 +264,8 @@ bool ServerSocketContext::Send(uint64_t nConnId, const char * pData, size_t nSiz
 }
 
 void ServerSocketContext::Broadcast(const char * pData, size_t nSize) {
-	for (auto & r : _mConns) {
-		SOCKET	nSocket	= (SOCKET)r.second.nSocket;
+	for (auto & kv : _mConns) {
+		SOCKET	nSocket	= (SOCKET)kv.second->nSocket;
 		char *	pSend	= (char *)pData;
 		int		nSend	= 0;
 		int		nLeft	= (int)nSize;
@@ -293,28 +293,37 @@ void ServerSocketContext::Close(uint64_t nConnId, ENet::Close emCode) {
 	auto it = _mConns.find(nConnId);
 	if (it == _mConns.end()) return;
 
-	_pOwner->OnClose(it->second, emCode);
+	Connection * pConn = it->second;
+	SOCKET nSocket = (SOCKET)pConn->nSocket;
 
-	FD_CLR((SOCKET)it->second.nSocket, &_tIO);
-	closesocket(it->second.nSocket);
+	_pOwner->OnClose(pConn, emCode);
+	FD_CLR(nSocket, &_tIO);
+	closesocket(nSocket);
+	delete pConn;
+
 	_mConns.erase(it);
 }
 
-void ServerSocketContext::Close(const Connection & rConn, ENet::Close emCode) {
-	_pOwner->OnClose(rConn, emCode);
-
-	SOCKET nSocket = (SOCKET)rConn.nSocket;
+void ServerSocketContext::Close(Connection * pConn, ENet::Close emCode) {
+	SOCKET nSocket = (SOCKET)pConn->nSocket;
+	uint64_t nConnId = pConn->nConnId;
+	
+	_pOwner->OnClose(pConn, emCode);
 	FD_CLR(nSocket, &_tIO);
 	closesocket(nSocket);
-	_mConns.erase(rConn.nConnId);
+	delete pConn;
+
+	_mConns.erase(nConnId);
 }
 
 void ServerSocketContext::Shutdown() {
 	if (_nSocket == INVALID_SOCKET) return;
 
-	for (auto & r : _mConns) {
-		_pOwner->OnClose(r.second, ENet::Local);
-		closesocket(r.second.nSocket);
+	for (auto & kv : _mConns) {
+		Connection * pConn = kv.second;
+		_pOwner->OnClose(pConn, ENet::Local);
+		closesocket((SOCKET)pConn->nSocket);
+		delete pConn;
 	}
 
 	FD_ZERO(&_tIO);
@@ -358,15 +367,15 @@ void ServerSocketContext::Breath() {
 		uint64_t nConnId = nAllocId + 1;
 		nAllocId++;
 
-		Connection iConn;
-		iConn.nConnId	= nConnId;
-		iConn.nSocket	= (int)nAccept;
-		iConn.nIP		= iAddr.sin_addr.s_addr;
-		iConn.nPort		= iAddr.sin_port;
-		iConn.pUserData	= nullptr;
+		Connection * pConn	= new Connection;
+		pConn->nConnId		= nConnId;
+		pConn->nSocket		= (int)nAccept;
+		pConn->nIP			= iAddr.sin_addr.s_addr;
+		pConn->nPort		= iAddr.sin_port;
+		pConn->pUserData	= nullptr;
 
-		_mConns[nConnId] = iConn;
-		_pOwner->OnAccept(iConn);
+		_mConns[nConnId] = pConn;
+		_pOwner->OnAccept(pConn);
 	}
 
 	memcpy(&iRead, &_tIO, sizeof(_tIO));
@@ -377,7 +386,7 @@ void ServerSocketContext::Breath() {
 		SOCKET nSocket = iRead.fd_array[n];
 
 		for (auto & kv : _mConns) {
-			if (kv.second.nSocket == (int)nSocket) {
+			if (kv.second->nSocket == (int)nSocket) {
 				int nReaded = 0;
 				int nRecv = 0;
 
@@ -411,7 +420,7 @@ void ServerSocketContext::Breath() {
 Connection * ServerSocketContext::Find(uint64_t nConnId) {
 	auto it = _mConns.find(nConnId);
 	if (it == _mConns.end()) return nullptr;
-	return &_mConns[nConnId];
+	return it->second;
 }
 
 class SocketGuard {
