@@ -18,13 +18,6 @@
 
 using namespace std;
 
-struct SocketConnection {
-	SOCKET		nSocket;
-	sockaddr_in	iAddr;
-};
-
-typedef map<uint64_t, SocketConnection> Connections;
-
 class SocketContext {
 public:
 	SocketContext(ISocket * pOwner);
@@ -166,6 +159,8 @@ void SocketContext::Breath() {
 }
 
 class ServerSocketContext {
+	typedef map<uint64_t, Connection> ConnectionMap;
+
 public:
 	ServerSocketContext(IServerSocket * pOwner);
 	virtual ~ServerSocketContext();
@@ -175,26 +170,25 @@ public:
 	void	Broadcast(const char * pData, size_t nSize);
 	bool	IsValid(uint64_t nConnId) { return _mConns.find(nConnId) != _mConns.end(); }
 	void	Close(uint64_t nConnId, ENet::Close emCode);
+	void	Close(const Connection & rConn, ENet::Close emCode);
 	void	Shutdown();
 	void	Breath();
 
-	IServerSocket::RemoteInfo	GetClientInfo(uint64_t nConnId);
+	Connection *	Find(uint64_t nConnId);
 
 private:
 	IServerSocket *			_pOwner;
 	char *					_pReceived;
-	Connections				_mConns;
 	SOCKET					_nSocket;
-	map<SOCKET, uint64_t>	_mSocket2ConnId;
+	ConnectionMap			_mConns;
 	fd_set					_tIO;
 };
 
 ServerSocketContext::ServerSocketContext(IServerSocket * pOwner)
 	: _pOwner(pOwner)
 	, _pReceived(new char[SOCKET_BUFSIZE])
-	, _mConns()
 	, _nSocket(INVALID_SOCKET)
-	, _mSocket2ConnId()
+	, _mConns()
 	, _tIO() {
 	WSADATA wOut;
 	if (WSAStartup(MAKEWORD(2, 2), &wOut)) throw runtime_error("WinSock2 Startup failed!!!");
@@ -217,7 +211,6 @@ int ServerSocketContext::Listen(const string & sIP, int nPort) {
 		return WSAGetLastError();
 	}
 
-	_mSocket2ConnId.clear();
 	FD_ZERO(&_tIO);
 
 	struct sockaddr_in iAddr;
@@ -245,7 +238,7 @@ bool ServerSocketContext::Send(uint64_t nConnId, const char * pData, size_t nSiz
 	auto it = _mConns.find(nConnId);
 	if (it == _mConns.end()) return false;
 
-	SOCKET	nSocket	= it->second.nSocket;
+	SOCKET	nSocket	= (SOCKET)it->second.nSocket;
 	char *	pSend	= (char *)pData;
 	int		nSend	= 0;
 	int		nLeft	= (int)nSize;
@@ -272,7 +265,7 @@ bool ServerSocketContext::Send(uint64_t nConnId, const char * pData, size_t nSiz
 
 void ServerSocketContext::Broadcast(const char * pData, size_t nSize) {
 	for (auto & r : _mConns) {
-		SOCKET	nSocket	= r.second.nSocket;
+		SOCKET	nSocket	= (SOCKET)r.second.nSocket;
 		char *	pSend	= (char *)pData;
 		int		nSend	= 0;
 		int		nLeft	= (int)nSize;
@@ -300,28 +293,37 @@ void ServerSocketContext::Close(uint64_t nConnId, ENet::Close emCode) {
 	auto it = _mConns.find(nConnId);
 	if (it == _mConns.end()) return;
 
-	_pOwner->OnClose(nConnId, emCode);
+	_pOwner->OnClose(it->second, emCode);
 
-	FD_CLR(it->second.nSocket, &_tIO);
-	_mSocket2ConnId.erase(it->second.nSocket);
+	FD_CLR((SOCKET)it->second.nSocket, &_tIO);
 	closesocket(it->second.nSocket);
 	_mConns.erase(it);
+}
+
+void ServerSocketContext::Close(const Connection & rConn, ENet::Close emCode) {
+	_pOwner->OnClose(rConn, emCode);
+
+	SOCKET nSocket = (SOCKET)rConn.nSocket;
+	FD_CLR(nSocket, &_tIO);
+	closesocket(nSocket);
+	_mConns.erase(rConn.nConnId);
 }
 
 void ServerSocketContext::Shutdown() {
 	if (_nSocket == INVALID_SOCKET) return;
 
 	for (auto & r : _mConns) {
-		_pOwner->OnClose(r.first, ENet::Local);
+		_pOwner->OnClose(r.second, ENet::Local);
 		closesocket(r.second.nSocket);
 	}
 
 	FD_ZERO(&_tIO);
-	_mSocket2ConnId.clear();
 	_mConns.clear();
 
 	closesocket(_nSocket);
 	_nSocket = INVALID_SOCKET;
+
+	_pOwner->OnShutdown();
 }
 
 void ServerSocketContext::Breath() {
@@ -353,19 +355,18 @@ void ServerSocketContext::Breath() {
 
 		FD_SET(nAccept, &_tIO);
 
-		SocketConnection iInfo;
-		iInfo.nSocket = nAccept;
-		iInfo.iAddr = iAddr;
-
-		IServerSocket::RemoteInfo iRemote;
-		iRemote.nIP = iAddr.sin_addr.S_un.S_addr;
-		iRemote.nPort = iAddr.sin_port;
-
 		uint64_t nConnId = nAllocId + 1;
 		nAllocId++;
-		_mSocket2ConnId[nAccept] = nConnId;
-		_mConns[nConnId] = iInfo;
-		_pOwner->OnAccept(nConnId, iRemote);
+
+		Connection iConn;
+		iConn.nConnId	= nConnId;
+		iConn.nSocket	= (int)nAccept;
+		iConn.nIP		= iAddr.sin_addr.s_addr;
+		iConn.nPort		= iAddr.sin_port;
+		iConn.pUserData	= nullptr;
+
+		_mConns[nConnId] = iConn;
+		_pOwner->OnAccept(iConn);
 	}
 
 	memcpy(&iRead, &_tIO, sizeof(_tIO));
@@ -373,45 +374,44 @@ void ServerSocketContext::Breath() {
 	if (select(0, &iRead, 0, 0, &iWait) <= 0) return;
 
 	for (u_int n = 0; n < iRead.fd_count; ++n) {
-		auto it = _mSocket2ConnId.find(iRead.fd_array[n]);
-		if (it == _mSocket2ConnId.end()) continue;
+		SOCKET nSocket = iRead.fd_array[n];
 
-		uint64_t nConnId = it->second;
-		int nReaded = 0;
-		int nRecv = 0;
+		for (auto & kv : _mConns) {
+			if (kv.second.nSocket == (int)nSocket) {
+				int nReaded = 0;
+				int nRecv = 0;
 
-		memset(_pReceived, 0, SOCKET_BUFSIZE);
+				memset(_pReceived, 0, SOCKET_BUFSIZE);
 
-		while (true) {
-			nRecv = recv(iRead.fd_array[n], _pReceived + nReaded, SOCKET_BUFSIZE - nReaded, 0);
-			if (nRecv > 0) {
-				nReaded += nRecv;
-				if (nReaded >= SOCKET_BUFSIZE) {
-					_pOwner->OnReceive(nConnId, _pReceived, nReaded);
-					memset(_pReceived, 0, SOCKET_BUFSIZE);
-					nReaded = 0;
+				while (true) {
+					nRecv = recv(nSocket, _pReceived + nReaded, SOCKET_BUFSIZE - nReaded, 0);
+					if (nRecv > 0) {
+						nReaded += nRecv;
+						if (nReaded >= SOCKET_BUFSIZE) {
+							_pOwner->OnReceive(kv.second, _pReceived, nReaded);
+							memset(_pReceived, 0, SOCKET_BUFSIZE);
+							nReaded = 0;
+						}
+					} else if (nRecv < 0 && WSAGetLastError() == WSAEWOULDBLOCK) {
+						if (nReaded > 0) _pOwner->OnReceive(kv.second, _pReceived, nReaded);
+						break;
+					} else {
+						if (nReaded > 0) _pOwner->OnReceive(kv.second, _pReceived, nReaded);
+						Close(kv.second, nRecv == 0 ? ENet::Remote : ENet::BadData);
+						break;
+					}
 				}
-			} else if (nRecv < 0 && WSAGetLastError() == WSAEWOULDBLOCK) {
-				if (nReaded > 0) _pOwner->OnReceive(nConnId, _pReceived, nReaded);
-				break;
-			} else {
-				if (nReaded > 0) _pOwner->OnReceive(nConnId, _pReceived, nReaded);
-				Close(nConnId, nRecv == 0 ? ENet::Remote : ENet::BadData);
+
 				break;
 			}
-		}
+		}		
 	}
 }
 
-IServerSocket::RemoteInfo ServerSocketContext::GetClientInfo(uint64_t nConnId) {
-	IServerSocket::RemoteInfo iInfo;
+Connection * ServerSocketContext::Find(uint64_t nConnId) {
 	auto it = _mConns.find(nConnId);
-	if (it == _mConns.end()) return move(iInfo);
-
-	iInfo.nIP = it->second.iAddr.sin_addr.s_addr;
-	iInfo.nPort = it->second.iAddr.sin_port;
-
-	return move(iInfo);
+	if (it == _mConns.end()) return nullptr;
+	return &(it->second);
 }
 
 class SocketGuard {
@@ -608,11 +608,11 @@ void IServerSocket::Breath() {
 	_pCtx->Breath();
 }
 
-IServerSocket::RemoteInfo IServerSocket::GetClientInfo(uint64_t nConnId) {
-	return _pCtx->GetClientInfo(nConnId);
+Connection * IServerSocket::Find(uint64_t nConnId) {
+	return _pCtx->Find(nConnId);
 }
 
-string IServerSocket::RemoteInfo::GetIP() const {
+string Connection::IP() const {
 	char pAddr[16];
 
 	int n1 = (nIP & 0xFF);

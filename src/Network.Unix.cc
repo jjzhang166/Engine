@@ -22,13 +22,6 @@
 
 using namespace std;
 
-struct SocketConnection {
-	int			nSocket;
-	sockaddr_in	iAddr;
-};
-
-typedef map<uint64_t, SocketConnection> Connections;
-
 class SocketContext {
 public:
 	SocketContext(ISocket * pOwner);
@@ -170,6 +163,8 @@ void SocketContext::Breath() {
 }
 
 class ServerSocketContext {
+	typedef map<uint64_t, Connection> ConnectionMap;
+
 public:
 	ServerSocketContext(IServerSocket * pOwner);
 	virtual ~ServerSocketContext();
@@ -179,25 +174,25 @@ public:
 	void	Broadcast(const char * pData, size_t nSize);
 	bool	IsValid(uint64_t nConnId) { return _mConns.find(nConnId) != _mConns.end(); }
 	void	Close(uint64_t nConnId, ENet::Close emCode);
+	void	Close(const Connection & rConn, ENet::Close emCode);
 	void	Shutdown();
 	void	Breath();
 
-	IServerSocket::RemoteInfo	GetClientInfo(uint64_t nConnId);
+	Connection *	Find(uint64_t nConnId);
 
 private:
 	IServerSocket *		_pOwner;
 	char *				_pReceived;
-	Connections			_mConns;
-	map<int, uint64_t>	_mSocket2ConnId;
 	int					_nSocket;
+	ConnectionMap		_mConns;
 	int					_nIO;
 };
 
 ServerSocketContext::ServerSocketContext(IServerSocket * pOwner)
 	: _pOwner(pOwner)
 	, _pReceived(new char[SOCKET_BUFSIZE])
-	, _mConns()
 	, _nSocket(-1)
+	, _mConns()
 	, _nIO(0) {}
 
 ServerSocketContext::~ServerSocketContext() {
@@ -311,29 +306,37 @@ void ServerSocketContext::Close(uint64_t nConnId, ENet::Close emCode) {
 	auto it = _mConns.find(nConnId);
 	if (it == _mConns.end()) return;
 
-	_pOwner->OnClose(nConnId, emCode);
+	_pOwner->OnClose(it->second, emCode);
 
 	epoll_ctl(_nIO, EPOLL_CTL_DEL, it->second.nSocket, NULL);
 	close(it->second.nSocket);
-	_mSocket2ConnId.erase(it->second.nSocket);
 	_mConns.erase(it);
+}
+
+void ServerSocketContext::Close(const Connection & rConn, ENet::Close emCode) {
+	_pOwner->OnClose(rConn, emCode);
+
+	epoll_ctl(_nIO, EPOLL_CTL_DEL, rConn.nSocket, NULL);
+	close(rConn.nSocket);
+	_mConns.erase(rConn.nConnId);
 }
 
 void ServerSocketContext::Shutdown() {
 	if (_nSocket < 0) return;
 
-	for (auto & r : _mConns) {
-		_pOwner->OnClose(r.first, ENet::Local);
-		epoll_ctl(_nIO, EPOLL_CTL_DEL, r.second.nSocket, NULL);
-		close(r.second.nSocket);
+	for (auto & kv : _mConns) {
+		_pOwner->OnClose(kv.second, ENet::Local);
+		epoll_ctl(_nIO, EPOLL_CTL_DEL, kv.second.nSocket, NULL);
+		close(kv.second.nSocket);
 	}
 
 	epoll_ctl(_nIO, EPOLL_CTL_DEL, _nSocket, NULL);
-	_mSocket2ConnId.clear();
 	_mConns.clear();
 
 	close(_nSocket);
 	_nSocket = -1;
+
+	_pOwner->OnShutdown();
 }
 
 void ServerSocketContext::Breath() {
@@ -368,59 +371,54 @@ void ServerSocketContext::Breath() {
 					continue;
 				}
 
-				SocketConnection iInfo;
-				iInfo.nSocket = nAccept;
-				iInfo.iAddr = iAddr;
+				Connection iConn;
+				iConn.nConnId	= nConnId;
+				iConn.nSocket	= nAccept;
+				iConn.nIP		= iAddr.sin_addr.s_addr;
+				iConn.nPort		= iAddr.sin_port;
+				iConn.pUserData = nullptr;
 
-				IServerSocket::RemoteInfo iRemote;
-				iRemote.nIP = iAddr.sin_addr.s_addr;
-				iRemote.nPort = iAddr.sin_port;
-
-				_mSocket2ConnId[nAccept] = nConnId;
-				_mConns[nConnId] = iInfo;
-				_pOwner->OnAccept(nConnId, iRemote);
+				_mConns[nConnId] = iConn;
+				_pOwner->OnAccept(iConn);
 			}
 		} else {
 			int nSocket = pEvents[i].data.fd;
 			int nReaded = 0;
 
-			auto it = _mSocket2ConnId.find(nSocket);
-			if (it == _mSocket2ConnId.end()) continue;
-			uint64_t nConnId = it->second;
+			for (auto & kv : _mConns) {
+				if (nSocket == kv.second.nSocket) {
+					memset(_pReceived, 0, SOCKET_BUFSIZE);
 
-			memset(_pReceived, 0, SOCKET_BUFSIZE);
-
-			while (true) {
-				int nRecv = (int)recv(nSocket, _pReceived + nReaded, SOCKET_BUFSIZE - nReaded, MSG_DONTWAIT);
-				if (nRecv > 0) {
-					nReaded += nRecv;
-					if (nReaded >= SOCKET_BUFSIZE) {
-						_pOwner->OnReceive(nConnId, _pReceived, nReaded);
-						memset(_pReceived, 0, SOCKET_BUFSIZE);
-						nReaded = 0;
+					while (true) {
+						int nRecv = (int)recv(nSocket, _pReceived + nReaded, SOCKET_BUFSIZE - nReaded, MSG_DONTWAIT);
+						if (nRecv > 0) {
+							nReaded += nRecv;
+							if (nReaded >= SOCKET_BUFSIZE) {
+								_pOwner->OnReceive(kv.second, _pReceived, nReaded);
+								memset(_pReceived, 0, SOCKET_BUFSIZE);
+								nReaded = 0;
+							}
+						} else if (nRecv < 0 && errno == EAGAIN) {
+							if (nReaded > 0) _pOwner->OnReceive(kv.second, _pReceived, nReaded);
+							break;
+						} else {
+							if (nReaded > 0) _pOwner->OnReceive(kv.second, _pReceived, nReaded);
+							Close(kv.second, nRecv == 0 ? ENet::Remote : ENet::BadData);
+							break;
+						}
 					}
-				} else if (nRecv < 0 && errno == EAGAIN) {
-					if (nReaded > 0) _pOwner->OnReceive(nConnId, _pReceived, nReaded);
-					break;
-				} else {
-					if (nReaded > 0) _pOwner->OnReceive(nConnId, _pReceived, nReaded);
-					Close(nConnId, nRecv == 0 ? ENet::Remote : ENet::BadData);
+
 					break;
 				}
-			}
+			}			
 		}
 	}
 }
 
-IServerSocket::RemoteInfo ServerSocketContext::GetClientInfo(uint64_t nConnId) {
-	IServerSocket::RemoteInfo iInfo;
+Connection * ServerSocketContext::Find(uint64_t nConnId) {
 	auto it = _mConns.find(nConnId);
-	if (it == _mConns.end()) return move(iInfo);
-
-	iInfo.nIP = it->second.iAddr.sin_addr.s_addr;
-	iInfo.nPort = it->second.iAddr.sin_port;
-
-	return move(iInfo);
+	if (it == _mConns.end()) return nullptr;
+	return &(it->second);
 }
 
 class SocketGuard {
@@ -617,11 +615,11 @@ void IServerSocket::Breath() {
 	_pCtx->Breath();
 }
 
-IServerSocket::RemoteInfo IServerSocket::GetClientInfo(uint64_t nConnId) {
-	return _pCtx->GetClientInfo(nConnId);
+Connection * IServerSocket::Find(uint64_t nConnId) {
+	return _pCtx->Find(nConnId);
 }
 
-string IServerSocket::RemoteInfo::GetIP() const {
+string Connection::IP() const {
 	char pAddr[16];
 
 	int n1 = (nIP & 0xFF);
