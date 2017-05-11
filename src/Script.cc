@@ -29,7 +29,7 @@ int LuaProxy::Index(lua_State * L) {
 			lua_pushnil(L);
 			return 0;
 		}
-	} else if (lua_iscfunction(L, -1) || lua_isfunction(L, -1)) {
+	} else if (lua_istable(L, -1) || lua_iscfunction(L, -1) || lua_isfunction(L, -1)) {
 		lua_remove(L, -2);
 		return 1;
 	} else {
