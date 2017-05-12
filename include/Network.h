@@ -40,7 +40,6 @@ struct Connection {
 	uint32_t	nIP;		//! IP address
 	int			nPort;		//! Port
 	void *		pData;		//! User data
-	uint64_t	nExtra;		//! Extra
 
 	std::string	IP() const;
 };

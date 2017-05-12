@@ -373,7 +373,6 @@ void ServerSocketContext::Breath() {
 				pConn->nIP		= iAddr.sin_addr.s_addr;
 				pConn->nPort	= iAddr.sin_port;
 				pConn->pData	= nullptr;
-				pConn->nExtra	= 0;
 
 				_mConns[nConnId] = pConn;
 				_mSocket2Conns[(uint64_t)nAccept] = pConn;
