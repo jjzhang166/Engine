@@ -289,6 +289,8 @@ void ServerSocketContext::Broadcast(const char * pData, size_t nSize) {
 }
 
 void ServerSocketContext::Close(Connection * pConn, ENet::Close emCode) {
+	if (!pConn) return;
+
 	SOCKET nSocket = (SOCKET)pConn->nSocket;
 	uint64_t nConnId = pConn->nId;
 	
