@@ -166,10 +166,8 @@ public:
 	virtual ~ServerSocketContext();
 
 	int		Listen(const string & sIP, int nPort);
-	bool	Send(uint64_t nConnId, const char * pData, size_t nSize);
+	bool	Send(Connection * pConn, const char * pData, size_t nSize);
 	void	Broadcast(const char * pData, size_t nSize);
-	bool	IsValid(uint64_t nConnId) { return _mConns.find(nConnId) != _mConns.end(); }
-	void	Close(uint64_t nConnId, ENet::Close emCode);
 	void	Close(Connection * pConn, ENet::Close emCode);
 	void	Shutdown();
 	void	Breath();
@@ -236,11 +234,10 @@ int ServerSocketContext::Listen(const string & sIP, int nPort) {
 	return 0;
 }
 
-bool ServerSocketContext::Send(uint64_t nConnId, const char * pData, size_t nSize) {
-	auto it = _mConns.find(nConnId);
-	if (it == _mConns.end()) return false;
+bool ServerSocketContext::Send(Connection * pConn, const char * pData, size_t nSize) {
+	if (!pConn) return false;
 
-	SOCKET	nSocket	= (SOCKET)it->second->nSocket;
+	SOCKET	nSocket	= (SOCKET)pConn->nSocket;
 	char *	pSend	= (char *)pData;
 	int		nSend	= 0;
 	int		nLeft	= (int)nSize;
@@ -291,25 +288,9 @@ void ServerSocketContext::Broadcast(const char * pData, size_t nSize) {
 	}
 }
 
-void ServerSocketContext::Close(uint64_t nConnId, ENet::Close emCode) {
-	auto it = _mConns.find(nConnId);
-	if (it == _mConns.end()) return;
-
-	Connection * pConn = it->second;
-	SOCKET nSocket = (SOCKET)pConn->nSocket;
-
-	_pOwner->OnClose(pConn, emCode);
-	FD_CLR(nSocket, &_tIO);
-	closesocket(nSocket);
-	delete pConn;
-
-	_mConns.erase(nConnId);
-	_mSocket2Conns.erase((uint64_t)nSocket);
-}
-
 void ServerSocketContext::Close(Connection * pConn, ENet::Close emCode) {
 	SOCKET nSocket = (SOCKET)pConn->nSocket;
-	uint64_t nConnId = pConn->nConnId;
+	uint64_t nConnId = pConn->nId;
 	
 	_pOwner->OnClose(pConn, emCode);
 	FD_CLR(nSocket, &_tIO);
@@ -373,11 +354,12 @@ void ServerSocketContext::Breath() {
 		nAllocId++;
 
 		Connection * pConn	= new Connection;
-		pConn->nConnId		= nConnId;
-		pConn->nSocket		= (int)nAccept;
-		pConn->nIP			= iAddr.sin_addr.s_addr;
-		pConn->nPort		= iAddr.sin_port;
-		pConn->pUserData	= nullptr;
+		pConn->nId		= nConnId;
+		pConn->nSocket	= (int)nAccept;
+		pConn->nIP		= iAddr.sin_addr.s_addr;
+		pConn->nPort	= iAddr.sin_port;
+		pConn->pData	= nullptr;
+		pConn->nExtra	= 0;
 
 		_mConns[nConnId] = pConn;
 		_mSocket2Conns[(uint64_t)nAccept] = pConn;
@@ -595,9 +577,9 @@ int IServerSocket::Listen(const std::string & sIP, int nPort) {
 	return _pCtx->Listen(sIP, nPort);
 }
 
-bool IServerSocket::Send(uint64_t nConnId, const char * pData, size_t nSize) {
+bool IServerSocket::Send(Connection * pConn, const char * pData, size_t nSize) {
 	if (!pData || nSize <= 0) return false;
-	return _pCtx->Send(nConnId, pData, nSize);
+	return _pCtx->Send(pConn, pData, nSize);
 }
 
 void IServerSocket::Broadcast(const char * pData, size_t nSize) {
@@ -605,12 +587,8 @@ void IServerSocket::Broadcast(const char * pData, size_t nSize) {
 	_pCtx->Broadcast(pData, nSize);
 }
 
-bool IServerSocket::IsValid(uint64_t nConnId) {
-	return _pCtx->IsValid(nConnId);
-}
-
-void IServerSocket::Close(uint64_t nConnId) {
-	_pCtx->Close(nConnId, ENet::Local);
+void IServerSocket::Close(Connection * pConn) {
+	_pCtx->Close(pConn, ENet::Local);
 }
 
 void IServerSocket::Shutdown() {
