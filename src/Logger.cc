@@ -97,6 +97,8 @@ void Logger::Log(ELog::Level emLevel, const char * pFile, int nLine, const char 
 	} else {
 		printf("\033[32m%s\033[0m\n", _pBuf);
 	}
+
+	fflush(stdout);
 #endif
 }
 
