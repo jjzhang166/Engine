@@ -426,6 +426,8 @@ template<> struct LuaRef<float> { typedef float Type; };
 template<> struct LuaRef<double> { typedef double Type; };
 template<> struct LuaRef<const char *> { typedef const char * Type; };
 template<> struct LuaRef<std::string> { typedef const std::string & Type; };
+template<class T> struct LuaRef<T *> { typedef T * Type; };
+template<class T> struct LuaRef<const T *> { typedef const T * Type; };
 
 ///////////////////////////////////////////////////////////////////////////////
 /// LuaClassInfo
