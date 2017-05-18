@@ -28,6 +28,6 @@ struct DateTime {
 /**
  * Get high resolution CPU time(in milliseconds).
  **/
-uint64_t Tick();
+double Tick();
 
 #endif//!	__ENGINE_DATETIME_H_INCLUDED__

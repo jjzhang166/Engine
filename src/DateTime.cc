@@ -6,7 +6,7 @@
 #endif
 
 #if defined(_WIN32)
-uint64_t Tick() {
+double Tick() {
 	static bool		bInited = false;
 	static double	dFreq	= 0;
 
@@ -23,13 +23,13 @@ uint64_t Tick() {
 
 	LARGE_INTEGER iCounter;
 	if (!QueryPerformanceCounter(&iCounter)) return 0;
-	return (uint64_t)((double)iCounter.QuadPart * dFreq * 1000);
+	return ((double)iCounter.QuadPart * dFreq * 1000.0);
 }
 #else
-uint64_t Tick() {
+double Tick() {
 	struct timespec iClock;
 	clock_gettime(CLOCK_MONOTONIC, &iClock);
-	return (uint64_t)iClock.tv_sec * 1000 + iClock.tv_nsec / 1000000;
+	return iClock.tv_sec * 1000.0 + iClock.tv_nsec / 1000000.0;
 }
 #endif
 

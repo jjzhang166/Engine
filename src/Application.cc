@@ -78,10 +78,10 @@ void Application::Start(int nArgc, char * pArgv[]) {
 
 	if (_nPerFrame > 0) {
 		while (_bRun) {
-			uint64_t nStart = Tick();
+			double nStart = Tick();
 			AutoNetworkBreath();
 			OnBreath();
-			float nLeft = (_nPerFrame + nStart) * 1.0f - Tick();
+			double nLeft = (_nPerFrame + nStart) * 1.0 - Tick();
 			if (nLeft > 0) std::this_thread::sleep_for(std::chrono::milliseconds((int)nLeft));
 			else std::this_thread::sleep_for(std::chrono::milliseconds(1));
 		}
@@ -98,5 +98,5 @@ void Application::Start(int nArgc, char * pArgv[]) {
 
 void Application::LockFPS(int nFPS) {
 	if (nFPS <= 0) return;
-	_nPerFrame = (uint64_t)(1000.0f / nFPS);
+	_nPerFrame = 1000.0 / nFPS;
 }

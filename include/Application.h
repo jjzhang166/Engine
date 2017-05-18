@@ -62,7 +62,7 @@ public:
 private:
 	std::atomic<bool>							_bRun;
 	int											_nExit;
-	uint64_t									_nPerFrame;
+	double										_nPerFrame;
 	std::map<int, std::function<void (int)>>	_mSignalHanders;
 
 	friend struct AppSignalDispatcher;
