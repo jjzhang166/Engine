@@ -150,6 +150,12 @@
     <ClInclude Include="src\lua\lzio.h">
       <Filter>src\lua</Filter>
     </ClInclude>
+    <ClInclude Include="src\lua\fpconv.h">
+      <Filter>src\lua</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lua\strbuf.h">
+      <Filter>src\lua</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Application.cc">
@@ -300,6 +306,15 @@
       <Filter>src\lua</Filter>
     </ClCompile>
     <ClCompile Include="src\lua\lzio.c">
+      <Filter>src\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lua\fpconv.c">
+      <Filter>src\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lua\lua_cjson.c">
+      <Filter>src\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lua\strbuf.c">
       <Filter>src\lua</Filter>
     </ClCompile>
   </ItemGroup>

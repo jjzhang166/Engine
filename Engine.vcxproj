@@ -33,6 +33,7 @@
     <ClInclude Include="include\Script.h" />
     <ClInclude Include="include\Singleton.h" />
     <ClInclude Include="include\Utils.h" />
+    <ClInclude Include="src\lua\fpconv.h" />
     <ClInclude Include="src\lua\lapi.h" />
     <ClInclude Include="src\lua\lcode.h" />
     <ClInclude Include="src\lua\lctype.h" />
@@ -54,6 +55,7 @@
     <ClInclude Include="src\lua\lundump.h" />
     <ClInclude Include="src\lua\lvm.h" />
     <ClInclude Include="src\lua\lzio.h" />
+    <ClInclude Include="src\lua\strbuf.h" />
     <ClInclude Include="src\Miniz\miniz.h" />
   </ItemGroup>
   <ItemGroup>
@@ -67,6 +69,7 @@
     <ClCompile Include="src\IniFile.cc" />
     <ClCompile Include="src\Json.cc" />
     <ClCompile Include="src\Logger.cc" />
+    <ClCompile Include="src\lua\fpconv.c" />
     <ClCompile Include="src\lua\lapi.c" />
     <ClCompile Include="src\lua\lauxlib.c" />
     <ClCompile Include="src\lua\lbaselib.c" />
@@ -96,10 +99,12 @@
     <ClCompile Include="src\lua\ltable.c" />
     <ClCompile Include="src\lua\ltablib.c" />
     <ClCompile Include="src\lua\ltm.c" />
+    <ClCompile Include="src\lua\lua_cjson.c" />
     <ClCompile Include="src\lua\lundump.c" />
     <ClCompile Include="src\lua\lutf8lib.c" />
     <ClCompile Include="src\lua\lvm.c" />
     <ClCompile Include="src\lua\lzio.c" />
+    <ClCompile Include="src\lua\strbuf.c" />
     <ClCompile Include="src\Miniz\miniz.cc" />
     <ClCompile Include="src\Network.Unix.cc" />
     <ClCompile Include="src\Network.Win32.cc" />
