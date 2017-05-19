@@ -47,6 +47,8 @@ LUAMOD_API int (luaopen_debug) (lua_State *L);
 #define LUA_LOADLIBNAME	"package"
 LUAMOD_API int (luaopen_package) (lua_State *L);
 
+#define LUA_JSONLIBNAME "json"
+LUAMOD_API int (luaopen_cjson) (lua_State * L);
 
 /* open all previous libraries */
 LUALIB_API void (luaL_openlibs) (lua_State *L);

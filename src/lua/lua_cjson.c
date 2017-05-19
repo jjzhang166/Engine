@@ -41,6 +41,7 @@
 #include <math.h>
 #include <limits.h>
 #include <lua.h>
+#include <lualib.h>
 #include <lauxlib.h>
 
 #include "strbuf.h"
@@ -1402,15 +1403,12 @@ static int lua_cjson_safe_new(lua_State *l)
 int luaopen_cjson(lua_State *l)
 {
     lua_cjson_new(l);
-    lua_setglobal(l, CJSON_MODNAME);
-    return 0;
+    return 1;
 }
 
 int luaopen_cjson_safe(lua_State *l)
 {
     lua_cjson_safe_new(l);
-
-    /* Return cjson.safe table */
     return 1;
 }
 

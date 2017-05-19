@@ -119,10 +119,6 @@ LuaNamespace & LuaNamespace::Method(const std::string & sMethod, int (*fOpt)(Lua
 LuaVM::LuaVM() : _pL(luaL_newstate()) {
 	luaL_openlibs(_pL);
 
-	/// Build in lua-CJson module.
-	extern int luaopen_cjson(lua_State *);
-	luaopen_cjson(_pL);
-
 	/// Hook error using Logger.
 	lua_atpanic(_pL, [](lua_State * L) -> int {
 		if (lua_gettop(L) > 0) {
