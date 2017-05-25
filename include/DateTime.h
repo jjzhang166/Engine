@@ -30,4 +30,9 @@ struct DateTime {
  **/
 double Tick();
 
+/**
+ * Get current timezone.
+ */
+int TimeZone();
+
 #endif//!	__ENGINE_DATETIME_H_INCLUDED__

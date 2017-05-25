@@ -129,3 +129,17 @@ uint64_t DateTime::Time() {
 	return mktime(&iTime) * 1000 + nMSec;
 }
 
+int TimeZone() {
+	time_t nTime = time(NULL);
+	struct tm iLocal, iGM;
+
+#if defined(_WIN32)
+	localtime_s(&iLocal, &nTime);
+	gmtime_s(&iGM, &nTime);
+#else
+	localtime_r(&nTime, &iLocal);
+	iGM = (*gmtime(&nTime));
+#endif
+
+	return iLocal.tm_hour - iGM.tm_hour;
+}
