@@ -39,7 +39,7 @@ public:
 	T Get(int nIdx, const std::string & sKey, const T & tDefault) const {
 		if (nIdx < 0 || (size_t)nIdx >= _vData.size()) return tDefault;
 		for (size_t nCol = 0; nCol < _vHeader.size(); ++nCol) {
-			if (_vHeader[nCol].compare(sKey) == 0) {
+			if (_vHeader[nCol].compare(sKey) == 0 && _vData[nIdx].size() > nCol) {
 				std::string sData = _vData[nIdx][nCol];
 				if (sData.empty()) return tDefault;
 				return Convert<T>(sData);
