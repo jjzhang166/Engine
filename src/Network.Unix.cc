@@ -37,12 +37,14 @@ private:
 	ISocket *		_pOwner;
 	char *			_pReceived;
 	int				_nSocket;
+	int				_nIO;
 };
 
 SocketContext::SocketContext(ISocket * pOwner)
 	: _pOwner(pOwner)
 	, _pReceived(new char[SOCKET_BUFSIZE])
-	, _nSocket(-1) {}
+	, _nSocket(-1)
+	, _nIO(0) {}
 
 SocketContext::~SocketContext() {
 	Close(ENet::Local);
@@ -99,12 +101,29 @@ int SocketContext::Connect(const string & sIP, int nPort) {
 		}
 	}
 
+	if ((_nIO = epoll_create(1)) < 0) {
+		close(_nSocket);
+		_nSocket = -1;
+		return ENet::Epoll;
+	}
+
+	struct epoll_event iEv;
+	iEv.events = EPOLLIN | EPOLLET;
+	iEv.data.fd = _nSocket;
+	if (epoll_ctl(_nIO, EPOLL_CTL_ADD, _nSocket, &iEv) < 0) {
+		close(_nIO);
+		close(_nSocket);
+		_nSocket = -1;
+		return ENet::Epoll;
+	}
+
 	_pOwner->OnConnected();
 	return 0;
 }
 
 void SocketContext::Close(ENet::Close emCode) {
 	if (_nSocket < 0) return;
+	close(_nIO);
 	close(_nSocket);
 	_nSocket = -1;
 	_pOwner->OnClose(emCode);
@@ -138,6 +157,10 @@ bool SocketContext::Send(const char * pData, size_t nSize) {
 
 void SocketContext::Breath() {
 	if (_nSocket < 0) return;
+
+	static epoll_event pEvents[4] = { 0 };
+	int nCount = epoll_wait(_nIO, pEvents, 4, 0);
+	if (nCount <= 0) return;
 
 	memset(_pReceived, 0, SOCKET_BUFSIZE);
 	int nReaded = 0;
@@ -331,6 +354,7 @@ void ServerSocketContext::Shutdown() {
 	_mConns.clear();
 	_mSocket2Conns.clear();
 
+	close(_nIO);
 	close(_nSocket);
 	_nSocket = -1;
 
