@@ -227,6 +227,9 @@ int ServerSocketContext::Listen(const string & sIP, int nPort) {
 	if (_nSocket >= 0) return ENet::Running;
 	if ((_nSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) return errno;
 
+	int nReuse = 1;
+	setsockopt(_nSocket, SOL_SOCKET, SO_REUSEADDR, &nReuse, sizeof(nReuse));
+
 	int nFlags = fcntl(_nSocket, F_GETFL, 0);
 	if (fcntl(_nSocket, F_SETFL, O_NONBLOCK | nFlags) < 0) {
 		close(_nSocket);
