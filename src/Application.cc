@@ -1,6 +1,7 @@
 #include	<Application.h>
 #include	<Path.h>
 #include	<DateTime.h>
+#include	<Logger.h>
 
 #include	<csignal>
 #include	<thread>
@@ -77,13 +78,19 @@ void Application::Start(int nArgc, char * pArgv[]) {
 	_bRun = true;
 
 	if (_nPerFrame > 0) {
+		double nNext = Tick() + _nPerFrame;
 		while (_bRun) {
-			double nStart = Tick();
 			AutoNetworkBreath();
 			OnBreath();
-			double nLeft = (_nPerFrame + nStart) * 1.0 - Tick();
-			if (nLeft > 0) std::this_thread::sleep_for(std::chrono::milliseconds((int)nLeft));
-			else std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
+			double nLeft = nNext - Tick();
+			if (nLeft > 0) {
+				std::this_thread::sleep_for(std::chrono::milliseconds((int)nLeft + 1));
+			} else {
+				LOG_WARN("Frame delay : %.4lf", nLeft);
+			}
+
+			nNext += _nPerFrame;
 		}
 	} else {
 		while (_bRun) {
