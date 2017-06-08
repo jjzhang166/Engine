@@ -75,7 +75,11 @@ int SocketContext::Connect(const string & sIP, int nPort) {
 	}
 
 	if (connect(_nSocket, (sockaddr *)&iAddr, sizeof(sockaddr)) < 0) {
-		if (errno != EINPROGRESS) return errno;
+		if (errno != EINPROGRESS) {
+			close(_nSocket);
+			_nSocket = -1;
+			return errno;
+		}
 
 		fd_set iSet;
 		struct timeval iWait;
@@ -473,13 +477,13 @@ SocketGuard::~SocketGuard() {
 
 void SocketGuard::Start() {
 	if (_bRunning) return;
-	_bRunning = true;
 
 	if (_pWorker) {
 		if (_pWorker->joinable()) _pWorker->join();
 		delete _pWorker;
 	}
-
+	
+	_bRunning = true;
 	_pWorker = new thread([this]() {
 		while (_bRunning) {
 			if (!_p->IsConnected()) {
