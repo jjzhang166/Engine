@@ -6,6 +6,16 @@
 #define		LOG_WARN(pFmt, ...)		Logger::Instance().Log(ELog::Warning, __FILE__, __LINE__, pFmt, ##__VA_ARGS__)
 #define		LOG_ERR(pFmt, ...)		Logger::Instance().Log(ELog::Error, __FILE__, __LINE__, pFmt, ##__VA_ARGS__)
 
+#define		LOG_ASSERT(exp, pFmt, ...)	if (!(exp)) {\
+	Logger::Instance().Log(ELog::Error, __FILE__, __LINE__, pFmt, ##__VA_ARGS__);\
+	return;\
+}
+
+#define		LOG_ASSERT2(exp, ret, pFmt, ...) if (!(exp)) {\
+	Logger::Instance().Log(ELog::Error, __FILE__, __LINE__, pFmt, ##__VA_ARGS__);\
+	return ret;\
+}
+
 #include	<string>
 #include	<mutex>
 
